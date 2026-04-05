@@ -1,0 +1,48 @@
+name: Save Journal Entry
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Date (YYYY-MM-DD)"
+        required: true
+        type: string
+      content:
+        description: "JSON content to save"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Save entry file
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p entries
+          cat > "entries/${{ inputs.date }}.json" <<'EOF'
+          ${{ inputs.content }}
+          EOF
+
+      - name: Validate JSON
+        shell: bash
+        run: |
+          python -m json.tool "entries/${{ inputs.date }}.json" > /dev/null
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "journal-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add "entries/${{ inputs.date }}.json"
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "journal: save entry ${{ inputs.date }}"
+          git push
