@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>יומן גיטהאב</title>
+  <style>
+    :root{
+      --bg:#0f172a;--card:#111827;--muted:#cbd5e1;--text:#f8fafc;--accent:#2563eb;--accent2:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(circle at top right,rgba(37,99,235,.24),transparent 35%),linear-gradient(180deg,#0b1220,#111827 45%,#0f172a);color:var(--text);font-family:Arial,sans-serif;min-height:100vh}
+    .wrap{max-width:860px;margin:auto;padding:18px}
+    .card{background:rgba(17,24,39,.88);backdrop-filter:blur(8px);border:1px solid rgba(148,163,184,.14);border-radius:24px;padding:18px;margin-top:14px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    .title{font-size:34px;font-weight:800}
+    .sub{color:var(--muted);margin-top:8px;line-height:1.6}
+    .day{font-size:30px;font-weight:800;margin:2px 0 10px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn,.dateInput{border:0;border-radius:18px;padding:13px 16px;font-size:16px}
+    .btn{background:linear-gradient(180deg,var(--accent2),var(--accent));color:#fff;font-weight:700;box-shadow:0 10px 20px rgba(37,99,235,.28), inset 0 2px 0 rgba(255,255,255,.20), inset 0 -3px 0 rgba(0,0,0,.18);cursor:pointer}
+    .dateInput{background:#0b1220;color:#fff;border:1px solid rgba(148,163,184,.18)}
+    .label{color:var(--muted);font-size:14px;margin-top:4px}
+    .list{margin:0;padding-right:22px;line-height:1.8}
+    .note{white-space:pre-wrap;line-height:1.7}
+    .colorBox{width:48px;height:48px;border-radius:14px;border:1px solid rgba(255,255,255,.12)}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="title">יומן גיטהאב</div>
+      <div class="sub">יומן פרטי אישי • לא יומן גוגל • ללא דמו • גישה מהירה לכל יום</div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn" id="prevBtn">יום קודם</button>
+        <button class="btn" id="todayBtn">היום</button>
+        <button class="btn" id="nextBtn">יום הבא</button>
+        <input class="dateInput" id="datePicker" type="date" />
+        <button class="btn" id="goBtn">עבור לתאריך</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="dayName" class="day"></div>
+      <div id="greg" class="label"></div>
+      <div id="heb" class="label"></div>
+      <div id="path" class="label"></div>
+    </div>
+
+    <div class="card">
+      <div class="day">אירועים</div>
+      <div id="events" class="muted"></div>
+    </div>
+
+    <div class="card">
+      <div class="day">הערות</div>
+      <div id="notes" class="note muted"></div>
+    </div>
+
+    <div class="card">
+      <div class="day">צבעי היום</div>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <div class="label">רקע</div>
+          <div id="bgColor" class="colorBox"></div>
+        </div>
+        <div>
+          <div class="label">כרטיס</div>
+          <div id="cardColor" class="colorBox"></div>
+        </div>
+        <div>
+          <div class="label">הדגשה</div>
+          <div id="accentColor" class="colorBox"></div>
+        </div>
+        <div>
+          <div class="label">טקסט</div>
+          <div id="textColor" class="colorBox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+function pad(n){return String(n).padStart(2,'0')}
+function toYmd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function fromYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function currentYmd(){const now=new Date();return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(now)}
+function setHashDate(ymd){location.hash='#day='+ymd}
+function getHashDate(){const m=(location.hash||'').match(/day=(\d{4}-\d{2}-\d{2})/);return m?m[1]:currentYmd()}
+function paintColor(id,val){document.getElementById(id).style.background=val||'#111827'}
+async function loadDay(ymd){
+  const date=fromYmd(ymd);
+  document.getElementById('datePicker').value=ymd;
+  document.getElementById('dayName').textContent=new Intl.DateTimeFormat('he-IL',{weekday:'long'}).format(date);
+  document.getElementById('greg').textContent='תאריך לועזי: '+new Intl.DateTimeFormat('he-IL',{year:'numeric',month:'long',day:'numeric'}).format(date);
+  document.getElementById('heb').textContent='תאריך עברי: '+new Intl.DateTimeFormat('he-u-ca-hebrew',{year:'numeric',month:'long',day:'numeric'}).format(date);
+  document.getElementById('path').textContent='entries/'+ymd+'.json';
+  try{
+    const r=await fetch('entries/'+ymd+'.json',{cache:'no-store'});
+    if(!r.ok) throw new Error('missing');
+    const d=await r.json();
+    const ev=Array.isArray(d.events)?d.events:[];
+    document.getElementById('events').innerHTML=ev.length?'<ul class="list">'+ev.map(x=>'<li>'+(x.time?x.time+' — ':'')+(x.title||'ללא כותרת')+'</li>').join('')+'</ul>':'אין עדיין אירועים שמורים ליום הזה.';
+    document.getElementById('notes').textContent=d.notes||'אין עדיין הערות ליום הזה.';
+    const c=d.colors||{};
+    paintColor('bgColor',c.bg||'#0f172a');
+    paintColor('cardColor',c.card||'#111827');
+    paintColor('accentColor',c.accent||'#2563eb');
+    paintColor('textColor',c.text||'#f8fafc');
+  }catch(e){
+    document.getElementById('events').textContent='אין עדיין קובץ ליום הזה בריפו.';
+    document.getElementById('notes').textContent='אפשר ליצור את היום הזה בשלב הבא של האוטומציה.';
+    paintColor('bgColor','#0f172a');paintColor('cardColor','#111827');paintColor('accentColor','#2563eb');paintColor('textColor','#f8fafc');
+  }
+}
+function shiftDay(delta){const d=fromYmd(getHashDate());d.setDate(d.getDate()+delta);setHashDate(toYmd(d))}
+document.getElementById('todayBtn').onclick=()=>setHashDate(currentYmd());
+document.getElementById('prevBtn').onclick=()=>shiftDay(-1);
+document.getElementById('nextBtn').onclick=()=>shiftDay(1);
+document.getElementById('goBtn').onclick=()=>{const v=document.getElementById('datePicker').value;if(v)setHashDate(v)};
+window.addEventListener('hashchange',()=>loadDay(getHashDate()));
+loadDay(getHashDate());
+</script>
+</body>
+</html>
