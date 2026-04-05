@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>שיעורים פרטיים</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--glass:rgba(17,24,39,.88);--text:#f8fafc;--muted:#cbd5e1;--accent:#2563eb;--accent2:#60a5fa;--green:#16a34a;--red:#dc2626}
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(circle at top right,rgba(37,99,235,.24),transparent 35%),linear-gradient(180deg,#0b1220,#111827 45%,#0f172a);color:var(--text);font-family:Arial,sans-serif;min-height:100vh}
+    .wrap{max-width:1100px;margin:auto;padding:18px}.card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid rgba(148,163,184,.14);border-radius:24px;padding:18px;margin-top:14px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    .title{font-size:34px;font-weight:800}.sub{color:var(--muted);margin-top:8px;line-height:1.6}.student{font-size:24px;font-weight:800;margin:0 0 10px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}.th,th{color:#bfdbfe;font-size:14px}.th,th,td{text-align:right;padding:12px 10px;border-bottom:1px solid rgba(148,163,184,.14)}
+    .paid{background:rgba(22,163,74,.16)} .unpaid{background:rgba(220,38,38,.16)}
+    .badge{display:inline-block;border-radius:999px;padding:6px 10px;font-weight:700;font-size:13px}
+    .green{background:rgba(22,163,74,.18);color:#86efac}.red{background:rgba(220,38,38,.18);color:#fca5a5}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="title">שיעורים פרטיים</div>
+    <div class="sub">ניהול תלמידים פרטיים לפי תאריכים מדויקים, תשלום, סכום וקבלה. ירוק = שולם. אדום = לא שולם.</div>
+  </div>
+  <div id="app"></div>
+</div>
+<script>
+function esc(v){return String(v??'').replace(/[&<>\"]/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[s]))}
+function lessonRow(l){
+  const paid=!!l.paid;
+  return `<tr class="${paid?'paid':'unpaid'}"><td>${esc(l.date||'')}</td><td>${esc(l.time||'')}</td><td>${esc((l.amount??'')!==''?l.amount+' ₪':'')}</td><td><span class="badge ${paid?'green':'red'}">${paid?'שולם':'לא שולם'}</span></td><td>${l.receipt?'הוצאה קבלה':'לא הוצאה קבלה'}</td><td class="muted">${esc(l.notes||'')}</td></tr>`;
+}
+fetch('data/private-lessons.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{
+  const students=Array.isArray(data.students)?data.students:[];
+  if(!students.length){document.getElementById('app').innerHTML='<div class="card"><div class="muted">עדיין אין תלמידים שמורים.</div></div>';return;}
+  document.getElementById('app').innerHTML=students.map(s=>`<div class="card"><div class="student">${esc(s.name||'ללא שם')}</div><table><thead><tr><th>תאריך</th><th>שעה</th><th>סכום</th><th>תשלום</th><th>קבלה</th><th>הערות</th></tr></thead><tbody>${(Array.isArray(s.lessons)&&s.lessons.length)?s.lessons.map(lessonRow).join(''):'<tr><td colspan="6" class="muted">אין עדיין שיעורים שמורים לתלמיד הזה.</td></tr>'}</tbody></table></div>`).join('');
+}).catch(()=>{document.getElementById('app').innerHTML='<div class="card"><div class="muted">לא ניתן היה לטעון את נתוני השיעורים הפרטיים.</div></div>';});
+</script>
+</body>
+</html>
