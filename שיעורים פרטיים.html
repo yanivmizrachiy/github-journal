@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>שיעורים פרטיים</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--text:#f8fafc;--muted:#cbd5e1;--accent:#2563eb;--green:#16a34a;--red:#dc2626}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b1220,#111827 45%,#0f172a);color:var(--text);font-family:Arial,sans-serif}
+    .wrap{max-width:1100px;margin:auto;padding:18px}
+    .card{background:rgba(17,24,39,.92);border:1px solid rgba(148,163,184,.14);border-radius:24px;padding:18px;margin-top:14px}
+    .title{font-size:34px;font-weight:800}.sub{color:var(--muted);line-height:1.6;margin-top:8px}
+    table{width:100%;border-collapse:collapse;margin-top:14px}
+    th,td{padding:12px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:right;vertical-align:top}
+    th{color:#bfdbfe;font-size:14px}
+    .paid{background:rgba(22,163,74,.16)} .unpaid{background:rgba(220,38,38,.16)}
+    .badge{display:inline-block;border-radius:999px;padding:6px 10px;font-weight:700;font-size:13px}
+    .badge.green{background:rgba(22,163,74,.18);color:#86efac}.badge.red{background:rgba(220,38,38,.18);color:#fca5a5}
+    .note{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="title">שיעורים פרטיים</div>
+    <div class="sub">ניהול תלמידים פרטיים: תאריכים מדויקים, תשלום, סכום, וקבלה. ירוק = שולם. אדום = לא שולם.</div>
+  </div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>תלמיד</th>
+          <th>תאריך שיעור</th>
+          <th>שעה</th>
+          <th>סכום</th>
+          <th>סטטוס תשלום</th>
+          <th>קבלה</th>
+          <th>הערות</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="unpaid">
+          <td>דוגמה בלבד להסבר המבנה</td>
+          <td>2026-04-05</td>
+          <td>18:00</td>
+          <td>0 ₪</td>
+          <td><span class="badge red">לא שולם</span></td>
+          <td>לא הוצאה</td>
+          <td class="note">בדף האמיתי הנתונים ייטענו מקובץ נתונים ייעודי.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>
