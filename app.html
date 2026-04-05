@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<title>יומן גיטהאב</title>
+<style>
+body{margin:0;background:#0f172a;color:#f8fafc;font-family:Arial}
+.wrap{max-width:760px;margin:auto;padding:20px}
+.card{background:#111827;border-radius:22px;padding:18px;margin-top:16px}
+.title{font-size:32px;font-weight:800}
+.big{font-size:26px;font-weight:800;margin-top:10px}
+.btn{margin-top:16px;display:inline-block;background:#2563eb;padding:12px 16px;border-radius:16px;color:#fff;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<div class="title">יומן גיטהאב</div>
+<div id="day" class="big"></div>
+<div id="greg"></div>
+<div id="heb"></div>
+</div>
+<div class="card">
+<div class="big">אירועים</div>
+<div id="events"></div>
+</div>
+</div>
+<script>
+const now=new Date();
+const ymd=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+const day=new Intl.DateTimeFormat('he-IL',{weekday:'long'}).format(now);
+const greg=new Intl.DateTimeFormat('he-IL',{year:'numeric',month:'long',day:'numeric'}).format(now);
+const heb=new Intl.DateTimeFormat('he-u-ca-hebrew',{year:'numeric',month:'long',day:'numeric'}).format(now);
+document.getElementById('day').textContent=day;
+document.getElementById('greg').textContent='תאריך לועזי: '+greg;
+document.getElementById('heb').textContent='תאריך עברי: '+heb;
+fetch('entries/'+ymd+'.json').then(r=>r.json()).then(d=>{
+const e=d.events||[];
+document.getElementById('events').innerHTML=e.length?e.map(x=>x.title).join('<br>'):'אין אירועים';
+}).catch(()=>document.getElementById('events').textContent='אין נתונים');
+</script>
+</body>
+</html>
