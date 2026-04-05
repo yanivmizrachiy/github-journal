@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>עורך יומן</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--text:#f8fafc;--muted:#cbd5e1;--accent:#2563eb;--accent2:#60a5fa}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b1220,#111827 45%,#0f172a);color:var(--text);font-family:Arial,sans-serif}
+    .wrap{max-width:900px;margin:auto;padding:18px}.card{background:rgba(17,24,39,.92);border:1px solid rgba(148,163,184,.14);border-radius:24px;padding:18px;margin-top:14px}
+    .title{font-size:34px;font-weight:800}.sub{color:var(--muted);line-height:1.6;margin-top:8px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn,input,textarea{border-radius:18px;border:0;font-size:16px}.btn{background:linear-gradient(180deg,var(--accent2),var(--accent));color:#fff;padding:13px 16px;font-weight:700;cursor:pointer}
+    input,textarea{background:#0b1220;color:#fff;border:1px solid rgba(148,163,184,.18);padding:12px 14px;width:100%} textarea{min-height:140px;resize:vertical}
+    label{display:block;color:var(--muted);margin:10px 0 6px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.out{white-space:pre-wrap;line-height:1.7;color:#e2e8f0}
+    @media (max-width:700px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="title">עורך יומן</div>
+    <div class="sub">הדף הזה מכין תוכן מסודר ליום מסוים. בשלב הבא נחבר שמירה אוטומטית אמיתית ל-GitHub Actions.</div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="todayBtn">היום</button><button class="btn" id="loadBtn">טען יום</button></div>
+    <label for="date">תאריך</label>
+    <input id="date" type="date" />
+  </div>
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label for="eventTitle">כותרת אירוע</label>
+        <input id="eventTitle" placeholder="לדוגמה: פגישה" />
+      </div>
+      <div>
+        <label for="eventTime">שעת אירוע</label>
+        <input id="eventTime" placeholder="09:00" />
+      </div>
+    </div>
+    <label for="notes">הערות היום</label>
+    <textarea id="notes" placeholder="כתוב כאן את ההערות של היום"></textarea>
+    <div class="row" style="margin-top:14px"><button class="btn" id="buildBtn">הכן תוכן ליום</button></div>
+  </div>
+  <div class="card">
+    <div class="title" style="font-size:24px">פלט מוכן</div>
+    <div id="out" class="out" style="margin-top:12px">עדיין לא נבנה תוכן.</div>
+  </div>
+</div>
+<script>
+function pad(n){return String(n).padStart(2,'0')}
+function currentYmd(){const now=new Date();return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(now)}
+const dateEl=document.getElementById('date'); dateEl.value=currentYmd();
+document.getElementById('todayBtn').onclick=()=>dateEl.value=currentYmd();
+document.getElementById('loadBtn').onclick=async()=>{
+  const ymd=dateEl.value; if(!ymd) return;
+  try{ const r=await fetch('entries/'+ymd+'.json',{cache:'no-store'}); const d=await r.json();
+    document.getElementById('notes').value=d.notes||'';
+    if(Array.isArray(d.events) && d.events[0]){document.getElementById('eventTitle').value=d.events[0].title||'';document.getElementById('eventTime').value=d.events[0].time||'';}
+  }catch(e){}
+};
+document.getElementById('buildBtn').onclick=()=>{
+  const ymd=dateEl.value; const title=document.getElementById('eventTitle').value.trim(); const time=document.getElementById('eventTime').value.trim(); const notes=document.getElementById('notes').value;
+  const payload={date_gregorian:ymd,events:title?[{time,title}]:[],notes};
+  document.getElementById('out').textContent=JSON.stringify(payload,null,2);
+};
+</script>
+</body>
+</html>
