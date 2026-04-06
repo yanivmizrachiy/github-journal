@@ -73,6 +73,16 @@ if('serviceWorker' in navigator){
 }
 
 loadHistory();
+<script src="./assets/calendar.js"></script>
+<script>
+document.querySelectorAll(".day").forEach((el,i)=>{
+const d=new Date();
+d.setDate(d.getDate()-d.getDay()+i);
+if(isShabbat(d)){
+el.style.background="#ec4899";
+}
+});
+</script>
 </script>
 </body>
 </html>

@@ -63,6 +63,22 @@ fetch("./entries/"+iso+".json?"+Date.now())
   document.getElementById("events").textContent="אין נתונים";
   document.getElementById("notes").textContent="";
 });
+<script src="./assets/calendar.js"></script>
+<script>
+const d=new Date();
+if(isShabbat(d)){
+document.body.style.background="#ec4899";
+getParasha(d).then(p=>{
+if(p){
+const el=document.createElement("div");
+el.style.fontSize="30px";
+el.style.fontWeight="bold";
+el.textContent="פרשת השבוע: "+p;
+document.body.prepend(el);
+}
+});
+}
+</script>
 </script>
 </body>
 </html>

@@ -30,7 +30,17 @@ body{margin:0;background:#0f172a;color:white;font-family:Arial}
 <script>
 let current=new Date();
 
-function render(){
+async function markShabbat(){
+const cells=document.querySelectorAll(".day");
+cells.forEach((el,i)=>{
+const d=new Date(current.getFullYear(),current.getMonth(),i+1);
+if(isShabbat(d)){
+el.classList.add("shabbat");
+}
+});
+}
+
+function render(); markShabbat(){
   const grid=document.getElementById("grid");
   grid.innerHTML="";
 
@@ -72,15 +82,45 @@ function render(){
 
 function next(){
   current.setMonth(current.getMonth()+1);
-  render();
+async function markShabbat(){
+const cells=document.querySelectorAll(".day");
+cells.forEach((el,i)=>{
+const d=new Date(current.getFullYear(),current.getMonth(),i+1);
+if(isShabbat(d)){
+el.classList.add("shabbat");
+}
+});
+}
+
+  render(); markShabbat();
 }
 
 function prev(){
   current.setMonth(current.getMonth()-1);
-  render();
+async function markShabbat(){
+const cells=document.querySelectorAll(".day");
+cells.forEach((el,i)=>{
+const d=new Date(current.getFullYear(),current.getMonth(),i+1);
+if(isShabbat(d)){
+el.classList.add("shabbat");
+}
+});
 }
 
-render();
+  render(); markShabbat();
+}
+
+async function markShabbat(){
+const cells=document.querySelectorAll(".day");
+cells.forEach((el,i)=>{
+const d=new Date(current.getFullYear(),current.getMonth(),i+1);
+if(isShabbat(d)){
+el.classList.add("shabbat");
+}
+});
+}
+
+render(); markShabbat();
 </script>
 </body>
 </html>
