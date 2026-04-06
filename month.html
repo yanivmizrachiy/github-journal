@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>לוח חודשי</title>
+<style>
+body{margin:0;background:#0f172a;color:white;font-family:Arial}
+.wrap{padding:20px;max-width:1100px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day{background:#1e293b;padding:8px;border-radius:10px;min-height:90px}
+.shabbat{background:#ec4899}
+.header{display:flex;justify-content:space-between;margin-bottom:15px}
+.btn{padding:8px 12px;background:#3b82f6;border-radius:8px;cursor:pointer}
+.title{font-size:14px;font-weight:bold}
+.note{font-size:12px;margin-top:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="btn" onclick="prev()">◀</div>
+    <h2 id="monthTitle"></h2>
+    <div class="btn" onclick="next()">▶</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+let current=new Date();
+
+function render(){
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+
+  const year=current.getFullYear();
+  const month=current.getMonth();
+
+  const first=new Date(year,month,1);
+  const startDay=first.getDay();
+
+  const days=new Date(year,month+1,0).getDate();
+
+  document.getElementById("monthTitle").textContent=
+    current.toLocaleDateString("he-IL",{month:"long",year:"numeric"});
+
+  for(let i=0;i<startDay;i++){
+    grid.innerHTML+="<div></div>";
+  }
+
+  for(let d=1;d<=days;d++){
+    const date=new Date(year,month,d);
+    const iso=date.toISOString().slice(0,10);
+    const isShabbat=date.getDay()===6;
+
+    const div=document.createElement("div");
+    div.className="day"+(isShabbat?" shabbat":"");
+
+    div.innerHTML="<div class='title'>"+d+"</div><div id='n"+d+"' class='note'></div>";
+
+    grid.appendChild(div);
+
+    fetch("./entries/"+iso+".json")
+    .then(r=>r.json())
+    .then(data=>{
+      document.getElementById("n"+d).textContent=(data.notes||"").slice(0,40);
+    })
+    .catch(()=>{});
+  }
+}
+
+function next(){
+  current.setMonth(current.getMonth()+1);
+  render();
+}
+
+function prev(){
+  current.setMonth(current.getMonth()-1);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
