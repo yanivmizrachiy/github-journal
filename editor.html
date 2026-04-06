@@ -19,6 +19,7 @@ button.secondary{background:#334155}
 .info{background:#1e3a8a}
 .small{font-size:14px;color:#cbd5e1}
 </style>
+  <link rel="manifest" href="./manifest.json" />
 </head>
 <body>
 <div class="wrap">
@@ -254,5 +255,6 @@ window.addEventListener("load", () => {
   syncPending();
 });
 </script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}</script>
 </body>
 </html>
