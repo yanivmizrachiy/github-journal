@@ -1,126 +1,128 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>לוח חודשי</title>
 <style>
-body{margin:0;background:#0f172a;color:white;font-family:Arial}
-.wrap{padding:20px;max-width:1100px;margin:auto}
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.btn{padding:10px 14px;background:#3b82f6;border-radius:10px;cursor:pointer;font-weight:bold}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.day{background:#1e293b;padding:8px;border-radius:10px;min-height:90px}
+.head{background:#111827;padding:10px;border-radius:10px;text-align:center;font-weight:bold}
+.day{background:#1e293b;padding:10px;border-radius:12px;min-height:110px}
 .shabbat{background:#ec4899}
-.header{display:flex;justify-content:space-between;margin-bottom:15px}
-.btn{padding:8px 12px;background:#3b82f6;border-radius:8px;cursor:pointer}
-.title{font-size:14px;font-weight:bold}
-.note{font-size:12px;margin-top:5px}
+.num{font-weight:bold;font-size:16px}
+.note{font-size:12px;margin-top:6px;white-space:pre-wrap}
+.parasha{font-size:12px;margin-top:6px;font-weight:bold}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="btn" onclick="prev()">◀</div>
+    <div class="btn" onclick="prevMonth()">◀ חודש קודם</div>
     <h2 id="monthTitle"></h2>
-    <div class="btn" onclick="next()">▶</div>
+    <div class="btn" onclick="nextMonth()">חודש הבא ▶</div>
+  </div>
+
+  <div class="grid" id="gridHeads">
+    <div class="head">ראשון</div>
+    <div class="head">שני</div>
+    <div class="head">שלישי</div>
+    <div class="head">רביעי</div>
+    <div class="head">חמישי</div>
+    <div class="head">שישי</div>
+    <div class="head">שבת</div>
   </div>
 
   <div class="grid" id="grid"></div>
 </div>
 
 <script>
-let current=new Date();
+let current = new Date();
 
-async function markShabbat(){
-const cells=document.querySelectorAll(".day");
-cells.forEach((el,i)=>{
-const d=new Date(current.getFullYear(),current.getMonth(),i+1);
-if(isShabbat(d)){
-el.classList.add("shabbat");
-}
-});
+function isShabbat(date){
+  return date.getDay() === 6;
 }
 
-function render(); markShabbat(){
-  const grid=document.getElementById("grid");
-  grid.innerHTML="";
-
-  const year=current.getFullYear();
-  const month=current.getMonth();
-
-  const first=new Date(year,month,1);
-  const startDay=first.getDay();
-
-  const days=new Date(year,month+1,0).getDate();
-
-  document.getElementById("monthTitle").textContent=
-    current.toLocaleDateString("he-IL",{month:"long",year:"numeric"});
-
-  for(let i=0;i<startDay;i++){
-    grid.innerHTML+="<div></div>";
-  }
-
-  for(let d=1;d<=days;d++){
-    const date=new Date(year,month,d);
-    const iso=date.toISOString().slice(0,10);
-    const isShabbat=date.getDay()===6;
-
-    const div=document.createElement("div");
-    div.className="day"+(isShabbat?" shabbat":"");
-
-    div.innerHTML="<div class='title'>"+d+"</div><div id='n"+d+"' class='note'></div>";
-
-    grid.appendChild(div);
-
-    fetch("./entries/"+iso+".json")
-    .then(r=>r.json())
-    .then(data=>{
-      document.getElementById("n"+d).textContent=(data.notes||"").slice(0,40);
-    })
-    .catch(()=>{});
+async function getParasha(date){
+  if(!isShabbat(date)) return "";
+  try{
+    const iso = date.toISOString().slice(0,10);
+    const res = await fetch(`https://www.hebcal.com/shabbat?cfg=json&date=${iso}`);
+    const data = await res.json();
+    return data.parasha || "";
+  }catch{
+    return "";
   }
 }
 
-function next(){
-  current.setMonth(current.getMonth()+1);
-async function markShabbat(){
-const cells=document.querySelectorAll(".day");
-cells.forEach((el,i)=>{
-const d=new Date(current.getFullYear(),current.getMonth(),i+1);
-if(isShabbat(d)){
-el.classList.add("shabbat");
-}
-});
+async function renderMonth(){
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  const year = current.getFullYear();
+  const month = current.getMonth();
+
+  const first = new Date(year, month, 1);
+  const startDay = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  document.getElementById("monthTitle").textContent =
+    current.toLocaleDateString("he-IL", { month: "long", year: "numeric" });
+
+  for(let i = 0; i < startDay; i++){
+    const empty = document.createElement("div");
+    grid.appendChild(empty);
+  }
+
+  for(let d = 1; d <= daysInMonth; d++){
+    const date = new Date(year, month, d);
+    const iso = date.toISOString().slice(0,10);
+    const shabbat = isShabbat(date);
+
+    const cell = document.createElement("div");
+    cell.className = "day" + (shabbat ? " shabbat" : "");
+    cell.innerHTML = `
+      <div class="num">${d}</div>
+      <div class="note" id="note-${d}">טוען...</div>
+      <div class="parasha" id="parasha-${d}"></div>
+    `;
+    grid.appendChild(cell);
+
+    fetch(`./entries/${iso}.json?ts=${Date.now()}`, {cache: "no-store"})
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        document.getElementById(`note-${d}`).textContent =
+          data && data.notes ? String(data.notes).slice(0, 60) : "";
+      })
+      .catch(() => {
+        document.getElementById(`note-${d}`).textContent = "";
+      });
+
+    if(shabbat){
+      getParasha(date).then(p => {
+        if(p){
+          document.getElementById(`parasha-${d}`).textContent = "פרשה: " + p;
+        }
+      });
+    }
+  }
 }
 
-  render(); markShabbat();
+function nextMonth(){
+  current.setMonth(current.getMonth() + 1);
+  renderMonth();
 }
 
-function prev(){
-  current.setMonth(current.getMonth()-1);
-async function markShabbat(){
-const cells=document.querySelectorAll(".day");
-cells.forEach((el,i)=>{
-const d=new Date(current.getFullYear(),current.getMonth(),i+1);
-if(isShabbat(d)){
-el.classList.add("shabbat");
-}
-});
+function prevMonth(){
+  current.setMonth(current.getMonth() - 1);
+  renderMonth();
 }
 
-  render(); markShabbat();
-}
-
-async function markShabbat(){
-const cells=document.querySelectorAll(".day");
-cells.forEach((el,i)=>{
-const d=new Date(current.getFullYear(),current.getMonth(),i+1);
-if(isShabbat(d)){
-el.classList.add("shabbat");
-}
-});
-}
-
-render(); markShabbat();
+renderMonth();
 </script>
 </body>
 </html>
