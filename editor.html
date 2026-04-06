@@ -3,68 +3,256 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>עורך יומן</title>
+<title>עורך יומן חכם</title>
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
-.wrap{max-width:700px;margin:auto;padding:20px}
-input,textarea{width:100%;margin-top:10px;padding:10px;border-radius:10px;border:none}
-button{margin-top:15px;padding:12px;border-radius:10px;border:none;background:#2563eb;color:#fff;font-weight:bold}
+body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#fff}
+.wrap{max-width:760px;margin:auto;padding:20px}
+.card{background:#111827;border-radius:18px;padding:16px;margin-top:14px}
+input,textarea{width:100%;margin-top:10px;padding:12px;border-radius:12px;border:none;box-sizing:border-box}
+textarea{min-height:220px;resize:vertical}
+button{margin-top:12px;padding:12px 16px;border-radius:12px;border:none;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer}
+button.secondary{background:#334155}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.msg{margin-top:12px;padding:12px;border-radius:12px;display:none;white-space:pre-wrap}
+.ok{background:#14532d}
+.err{background:#7f1d1d}
+.info{background:#1e3a8a}
+.small{font-size:14px;color:#cbd5e1}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h2>עורך יומן</h2>
+  <div class="card">
+    <h2 style="margin:0">עורך יומן חכם</h2>
+    <div class="small">Webhook-first → GitHub fallback → Draft queue</div>
+  </div>
 
-<input id="date" type="date">
-<input id="day" placeholder="שם היום">
-<input id="hebrew" placeholder="תאריך עברי">
-<textarea id="notes" placeholder="כתוב כאן..."></textarea>
+  <div class="card">
+    <input id="date" type="date">
+    <input id="day" placeholder="שם היום">
+    <input id="hebrew" placeholder="תאריך עברי">
+    <textarea id="notes" placeholder="כתוב כאן..."></textarea>
 
-<button onclick="save()">שמור לריפו</button>
+    <div class="row">
+      <button onclick="saveSmart()">שמור חכם</button>
+      <button class="secondary" onclick="syncPending()">נסה לסנכרן טיוטות</button>
+      <button class="secondary" onclick="loadToday()">טען קובץ היום</button>
+    </div>
 
+    <div id="info" class="msg info"></div>
+    <div id="ok" class="msg ok"></div>
+    <div id="err" class="msg err"></div>
+  </div>
 </div>
 
 <script>
+const REPO = "yanivmizrachiy/github-journal";
+const BRANCH = "main";
+const WEBHOOK_KEY = "journal_webhook_url";
+const TOKEN_KEY = "gh";
+const QUEUE_KEY = "journal_pending_queue";
+
 document.getElementById("date").value = new Date().toISOString().slice(0,10);
 
-async function save(){
-  const token = localStorage.getItem("gh") || prompt("הדבק token");
-  if(!token) return alert("אין token");
-  localStorage.setItem("gh", token);
+function el(id){ return document.getElementById(id); }
+function hideMsgs(){ ["info","ok","err"].forEach(id => el(id).style.display="none"); }
+function show(id, text){ hideMsgs(); el(id).textContent=text; el(id).style.display="block"; }
 
-  const date = document.getElementById("date").value;
+function b64(str){ return btoa(unescape(encodeURIComponent(str))); }
 
-  const data = {
-    day_name: document.getElementById("day").value,
+function getDayName(dateStr){
+  const d = new Date(dateStr + "T12:00:00");
+  return ["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"][d.getDay()];
+}
+
+function buildData(){
+  const date = el("date").value || new Date().toISOString().slice(0,10);
+  return {
+    day_name: el("day").value.trim() || getDayName(date),
     date_gregorian: date,
-    date_hebrew: document.getElementById("hebrew").value,
+    date_hebrew: el("hebrew").value.trim(),
     events: [],
-    notes: document.getElementById("notes").value,
+    notes: el("notes").value,
     updated_at: new Date().toISOString()
   };
+}
 
-  const res = await fetch("https://api.github.com/repos/yanivmizrachiy/github-journal/actions/workflows/save-entry.yml/dispatches", {
-    method: "POST",
+function getQueue(){
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function setQueue(q){
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+
+function enqueueDraft(item){
+  const q = getQueue();
+  const idx = q.findIndex(x => x.path === item.path);
+  if(idx >= 0) q[idx] = item; else q.push(item);
+  setQueue(q);
+}
+
+function removeDraft(path){
+  setQueue(getQueue().filter(x => x.path !== path));
+}
+
+async function getExistingSha(path, token){
+  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`, {
     headers: {
       "Authorization": "Bearer " + token,
       "Accept": "application/vnd.github+json"
+    }
+  });
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error("שגיאה בשליפת SHA");
+  const data = await res.json();
+  return data.sha || null;
+}
+
+async function saveViaGitHub(path, raw, token){
+  if(!token) throw new Error("חסר GitHub token");
+  const sha = await getExistingSha(path, token);
+  const body = {
+    message: `save journal ${path.split("/").pop().replace(".json","")}`,
+    content: b64(raw),
+    branch: BRANCH
+  };
+  if(sha) body.sha = sha;
+
+  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+    method: "PUT",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      ref: "main",
-      inputs: {
-        date: date,
-        content: JSON.stringify(data, null, 2)
-      }
-    })
+    body: JSON.stringify(body)
   });
 
-  if(res.ok){
-    alert("נשמר לריפו ✅");
-  } else {
-    alert("שגיאה");
+  if(!res.ok){
+    const txt = await res.text();
+    throw new Error("GitHub save failed: " + txt);
+  }
+  return true;
+}
+
+async function saveViaWebhook(path, raw, webhookUrl){
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      repo: REPO,
+      branch: BRANCH,
+      path,
+      content: JSON.parse(raw)
+    })
+  });
+  if(!res.ok){
+    const txt = await res.text();
+    throw new Error("Webhook save failed: " + txt);
+  }
+  return true;
+}
+
+async function smartSaveOne(item, silent=false){
+  const webhookUrl = localStorage.getItem(WEBHOOK_KEY) || "";
+  const token = localStorage.getItem(TOKEN_KEY) || "";
+
+  if(webhookUrl){
+    try{
+      await saveViaWebhook(item.path, item.raw, webhookUrl);
+      removeDraft(item.path);
+      if(!silent) show("ok","נשמר דרך webhook ✅");
+      return "webhook";
+    }catch(e){}
+  }
+
+  if(token){
+    try{
+      await saveViaGitHub(item.path, item.raw, token);
+      removeDraft(item.path);
+      if(!silent) show("ok","נשמר ישירות לריפו ✅");
+      return "github";
+    }catch(e){}
+  }
+
+  enqueueDraft(item);
+  if(!silent) show("err","לא נשמר לשרת. נשמרה טיוטה מקומית ומחכה לסנכרון.");
+  return "queued";
+}
+
+async function saveSmart(){
+  try{
+    const data = buildData();
+    const date = data.date_gregorian;
+    const path = `entries/${date}.json`;
+    const raw = JSON.stringify(data, null, 2);
+
+    if(!localStorage.getItem(TOKEN_KEY) && !localStorage.getItem(WEBHOOK_KEY)){
+      const token = prompt("הדבק GitHub token, או בטל אם תרצה לעבוד כרגע עם טיוטה מקומית בלבד");
+      if(token) localStorage.setItem(TOKEN_KEY, token.trim());
+    }
+
+    show("info","מנסה לשמור...");
+    await smartSaveOne({ path, raw, updated_at: new Date().toISOString() });
+  }catch(e){
+    show("err","שגיאה: " + e.message);
   }
 }
-</script>
 
+async function syncPending(){
+  const q = getQueue();
+  if(!q.length){
+    show("info","אין טיוטות ממתינות.");
+    return;
+  }
+
+  let ok = 0, fail = 0;
+  for(const item of q.slice()){
+    try{
+      const mode = await smartSaveOne(item, true);
+      if(mode === "queued") fail++;
+      else ok++;
+    }catch{
+      fail++;
+    }
+  }
+
+  const left = getQueue().length;
+  if(left === 0) show("ok",`הסנכרון הושלם. נשמרו ${ok} פריטים ✅`);
+  else show("err",`נשמרו ${ok} פריטים, נשארו ${left} ממתינים.`);
+}
+
+async function loadToday(){
+  const date = el("date").value || new Date().toISOString().slice(0,10);
+  try{
+    const res = await fetch(`./entries/${date}.json?ts=${Date.now()}`);
+    if(!res.ok) throw new Error("לא נמצא קובץ ליום הזה");
+    const data = await res.json();
+    el("day").value = data.day_name || "";
+    el("hebrew").value = data.date_hebrew || "";
+    el("notes").value = data.notes || "";
+    show("ok","קובץ היום נטען.");
+  }catch(e){
+    const q = getQueue();
+    const local = q.find(x => x.path === `entries/${date}.json`);
+    if(local){
+      const data = JSON.parse(local.raw);
+      el("day").value = data.day_name || "";
+      el("hebrew").value = data.date_hebrew || "";
+      el("notes").value = data.notes || "";
+      show("info","נטענה טיוטה מקומית שמחכה לסנכרון.");
+      return;
+    }
+    show("err", e.message);
+  }
+}
+
+window.addEventListener("load", () => {
+  el("day").value = getDayName(el("date").value);
+  syncPending();
+});
+</script>
 </body>
 </html>
