@@ -1,88 +1,117 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>היסטוריית יומן</title>
-  <link rel="manifest" href="./manifest.json" />
-  <style>
-    body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#f8fafc}
-    .wrap{max-width:820px;margin:0 auto;padding:20px}
-    .card{background:#111827;border-radius:22px;padding:18px;margin-top:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .title{font-size:30px;font-weight:800}
-    .sub{color:#cbd5e1;margin-top:8px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    .btn{display:inline-block;background:linear-gradient(180deg,#60a5fa,#2563eb);color:#fff;padding:12px 16px;border-radius:16px;text-decoration:none;font-weight:700}
-    .btn.secondary{background:#1e293b}
-    .item{padding:14px 0;border-bottom:1px solid #1f2937}
-    .item:last-child{border-bottom:none}
-    .date{font-weight:700;font-size:18px}
-    .notes{color:#cbd5e1;margin-top:6px;white-space:pre-wrap}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>לוח שבועי</title>
+<style>
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.btn{padding:10px 14px;background:#3b82f6;border-radius:10px;cursor:pointer;font-weight:bold;text-decoration:none;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.day{background:#1e293b;padding:12px;border-radius:12px;min-height:160px}
+.shabbat{background:#ec4899}
+.title{font-size:18px;font-weight:bold}
+.sub{font-size:13px;color:#dbeafe;margin-top:6px}
+.note{font-size:13px;line-height:1.6;white-space:pre-wrap;margin-top:10px}
+.parasha{font-size:13px;font-weight:bold;margin-top:10px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="title">היסטוריית היומן</div>
-      <div class="sub">צפייה בקבצי הימים האחרונים</div>
-      <div class="row">
-        <a class="btn secondary" href="./index.html">חזרה לדף הבית</a>
-        <a class="btn" href="./editor.html">פתח עורך</a>
-      </div>
-    </div>
-    <div class="card">
-      <div id="list">טוען...</div>
-            <a class="btn secondary" href="./settings.html">הגדרות</a>
-      </div>
-    </div>
+<div class="wrap">
+  <div class="header">
+    <a class="btn" href="./index.html">יומי</a>
+    <div style="font-size:28px;font-weight:bold" id="weekTitle">שבוע</div>
+    <a class="btn" href="./month.html">חודשי</a>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
 
 <script>
-const dates = [];
-for(let i=0;i<30;i++){
-  const d = new Date();
-  d.setDate(d.getDate()-i);
-  dates.push(d.toISOString().slice(0,10));
+let current = new Date();
+
+function startOfWeek(date){
+  const d = new Date(date);
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
 }
 
-async function loadHistory(){
-  const list = document.getElementById("list");
-  const items = [];
+function isShabbat(date){
+  return date.getDay() === 6;
+}
 
-  for(const date of dates){
-    try{
-      const res = await fetch(`./entries/${date}.json?ts=${Date.now()}`);
-      if(!res.ok) continue;
-      const data = await res.json();
-      items.push(`
-        <div class="item">
-          <div class="date">${date} — ${data.day_name || ""}</div>
-          <div class="notes">${(data.notes || "אין תוכן").slice(0,220)}</div>
-          <div class="row">
-            <a class="btn secondary" href="./entries/${date}.json">פתח JSON</a>
-          </div>
-        </div>
-      `);
-    } catch {}
+async function getParasha(date){
+  if(!isShabbat(date)) return "";
+  try{
+    const iso = date.toISOString().slice(0,10);
+    const res = await fetch(`https://www.hebcal.com/shabbat?cfg=json&date=${iso}`);
+    const data = await res.json();
+    return data.parasha || "";
+  }catch{
+    return "";
   }
-
-  list.innerHTML = items.length ? items.join("") : "לא נמצאו עדיין קבצי יומן זמינים.";
 }
 
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js');
+async function renderWeek(){
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  const start = startOfWeek(current);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  document.getElementById("weekTitle").textContent =
+    start.toLocaleDateString("he-IL") + " — " + end.toLocaleDateString("he-IL");
+
+  const names = ["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
+
+  for(let i=0;i<7;i++){
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+
+    const iso = d.toISOString().slice(0,10);
+    const shabbat = isShabbat(d);
+
+    const cell = document.createElement("div");
+    cell.className = "day" + (shabbat ? " shabbat" : "");
+    cell.innerHTML = `
+      <div class="title">${names[d.getDay()]}</div>
+      <div class="sub">${d.toLocaleDateString("he-IL")}</div>
+      <div class="sub" id="heb-${i}"></div>
+      <div class="note" id="note-${i}">טוען...</div>
+      <div class="parasha" id="parasha-${i}"></div>
+    `;
+    grid.appendChild(cell);
+
+    try{
+      document.getElementById(`heb-${i}`).textContent =
+        new Intl.DateTimeFormat("he-u-ca-hebrew",{day:"numeric",month:"long",year:"numeric"}).format(d);
+    }catch{}
+
+    fetch(`./entries/${iso}.json?ts=${Date.now()}`, {cache:"no-store"})
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        document.getElementById(`note-${i}`).textContent =
+          data && data.notes ? String(data.notes).slice(0,180) : "";
+      })
+      .catch(() => {
+        document.getElementById(`note-${i}`).textContent = "";
+      });
+
+    if(shabbat){
+      getParasha(d).then(p => {
+        if(p){
+          document.getElementById(`parasha-${i}`).textContent = "פרשה: " + p;
+        }
+      });
+    }
+  }
 }
 
-loadHistory();
-<script src="./assets/calendar.js"></script>
-<script>
-document.querySelectorAll(".day").forEach((el,i)=>{
-const d=new Date();
-d.setDate(d.getDate()-d.getDay()+i);
-if(isShabbat(d)){
-el.style.background="#ec4899";
-}
-});
-</script>
+renderWeek();
 </script>
 </body>
 </html>
