@@ -5,16 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>חודשי</title>
 <link rel="stylesheet" href="./assets/styles.css">
-<style>
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.day{padding:8px;border-radius:10px;background:#111827;font-size:13px;min-height:84px}
-.shabbat{background:#ec4899}
-.rosh{background:#facc15;color:#000}
-.holiday{background:#fde047;color:#000}
-.school{background:#22c55e}
-.label{font-size:10px;margin-top:2px;line-height:1.35}
-.num{font-weight:800;font-size:14px}
-</style>
 </head>
 <body>
 <div class="wrap">
@@ -24,11 +14,47 @@
     <a class="monthly" href="./month.html">חודשי</a>
     <a class="editor" href="./editor.html">כתיבה</a>
   </div>
+
   <div id="grid" class="grid"></div>
 </div>
-<script src="./assets/month-engine.js"></script>
+
+<script src="./assets/calendar-data.js"></script>
+<script src="./assets/calendar-logic.js"></script>
 <script>
-buildSmartMonth('grid');
+(async()=>{
+  const grid=document.getElementById('grid');
+  const now=new Date();
+  const year=now.getFullYear();
+  const month=now.getMonth();
+  const start=new Date(year,month,1);
+  const daysInMonth=new Date(year,month+1,0).getDate();
+
+  const schoolVacations=await loadSchoolVacations();
+  const hebcalMap=await getHebcalMonthMap(year, month);
+
+  for(let i=0;i<start.getDay();i++){
+    const e=document.createElement('div');
+    e.className='day-cell';
+    e.style.visibility='hidden';
+    grid.appendChild(e);
+  }
+
+  for(let i=1;i<=daysInMonth;i++){
+    const d=new Date(year,month,i);
+    const iso=isoDate(d);
+    const parasha=isFridayOrSaturday(d) ? await getParashaForDate(d) : "";
+    const labels=getLabelsForDate(iso, hebcalMap, schoolVacations, parasha);
+    const classes=getClassesForDate(d, iso, hebcalMap, schoolVacations);
+
+    const div=document.createElement('div');
+    div.className='day-cell '+classes.join(' ');
+    div.innerHTML=`
+      <div class="num">${i}</div>
+      ${labels.map(x=>`<div class="label">${x}</div>`).join("")}
+    `;
+    grid.appendChild(div);
+  }
+})();
 </script>
 </body>
 </html>

@@ -7,44 +7,52 @@
 <link rel="stylesheet" href="./assets/styles.css">
 </head>
 <body>
-
 <div class="wrap">
+  <div class="nav">
+    <a class="daily" href="./index.html">יומי</a>
+    <a class="weekly" href="./history.html">שבועי</a>
+    <a class="monthly" href="./month.html">חודשי</a>
+    <a class="editor" href="./editor.html">כתיבה</a>
+  </div>
 
-<h1 id="day" style="font-size:48px;text-align:center;"></h1>
-<div id="greg" style="text-align:center;margin-top:8px;"></div>
-<div id="heb" style="text-align:center;margin-top:6px;"></div>
+  <div id="hero" class="card">
+    <div id="day" class="day"></div>
+    <div id="greg" class="greg"></div>
+    <div id="heb" class="heb"></div>
+    <div id="labels" class="box"></div>
+  </div>
 
-<div class="box">
-<h2>מצב המערכת</h2>
-<div id="status"></div>
+  <div class="card">
+    <h2>תוכן היום</h2>
+    <div id="events" class="box"></div>
+    <div id="notes" class="box"></div>
+  </div>
 </div>
 
-<div class="box">
-<h2>תוכן היום</h2>
-<div id="events"></div>
-<div id="notes"></div>
-</div>
-
-</div>
-
+<script src="./assets/calendar-data.js"></script>
+<script src="./assets/calendar-logic.js"></script>
 <script>
-const day=document.getElementById("day");
-const greg=document.getElementById("greg");
-const heb=document.getElementById("heb");
-const events=document.getElementById("events");
-const notes=document.getElementById("notes");
+(async()=>{
+  const d=new Date();
+  const iso=isoDate(d);
+  const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
 
-const d=new Date();
-const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
+  day.textContent=names[d.getDay()];
+  greg.textContent=iso;
+  heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d);
 
-day.textContent=names[d.getDay()];
-greg.textContent=d.toISOString().slice(0,10);
-heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d);
+  const schoolVacations=await loadSchoolVacations();
+  const hebcalMap=await getHebcalMonthMap(d.getFullYear(), d.getMonth());
+  const parasha=isFridayOrSaturday(d) ? await getParashaForDate(d) : "";
+  const labelsArr=getLabelsForDate(iso, hebcalMap, schoolVacations, parasha);
+  labels.innerHTML=labelsArr.length ? labelsArr.map(x=>`<div>${x}</div>`).join("") : "";
 
-async function load(){
-  const iso=d.toISOString().slice(0,10);
+  const classes=getClassesForDate(d, iso, hebcalMap, schoolVacations);
+  if(classes.includes('school')) hero.classList.add('hero-school');
+  if(classes.includes('shabbat')) hero.classList.add('hero-shabbat');
+
   try{
-    const r=await fetch(`./entries/${iso}.json`);
+    const r=await fetch(`./entries/${iso}.json?ts=${Date.now()}`,{cache:'no-store'});
     const data=await r.json();
     events.textContent=(data.events||[]).join("\n");
     notes.textContent=data.notes||"";
@@ -52,10 +60,7 @@ async function load(){
     events.textContent="אין אירועים";
     notes.textContent="";
   }
-}
-
-load();
+})();
 </script>
-
 </body>
 </html>

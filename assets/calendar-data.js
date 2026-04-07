@@ -1,13 +1,17 @@
-function getSchoolEvents(date){
-  const d=date.toISOString().slice(5,10);
+async function loadSchoolVacations(){
+  try{
+    const r=await fetch('./assets/school-vacations.json?ts='+Date.now(),{cache:'no-store'});
+    return r.ok ? await r.json() : {};
+  }catch{
+    return {};
+  }
+}
 
-  const vacations={
-    "09-01":"חזרה ללימודים",
-    "10-10":"חופשת סוכות",
-    "12-20":"חופשת חנוכה",
-    "04-10":"חופשת פסח",
-    "06-20":"חופש גדול"
-  };
+function isFridayOrSaturday(d){
+  const day=d.getDay();
+  return day===5 || day===6;
+}
 
-  return vacations[d] || null;
+function isoDate(d){
+  return d.toISOString().slice(0,10);
 }

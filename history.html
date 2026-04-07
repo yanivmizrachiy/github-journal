@@ -8,57 +8,43 @@
 </head>
 <body>
 <div class="wrap">
-
-<div class="header">
   <div class="nav">
     <a class="daily" href="./index.html">יומי</a>
     <a class="weekly" href="./history.html">שבועי</a>
     <a class="monthly" href="./month.html">חודשי</a>
     <a class="editor" href="./editor.html">כתיבה</a>
   </div>
+
+  <div class="grid" id="grid"></div>
 </div>
 
-<div class="title" id="weekTitle">שבוע</div>
-<div class="grid7" id="grid" style="margin-top:20px"></div>
-
-</div>
-
-<script src="./assets/core.js"></script>
+<script src="./assets/calendar-data.js"></script>
+<script src="./assets/calendar-logic.js"></script>
 <script>
-(async ()=>{
-  const grid=document.getElementById("grid");
-  const base=new Date();
-  base.setHours(12,0,0,0);
-  base.setDate(base.getDate()-base.getDay());
-  const end=new Date(base);
-  end.setDate(base.getDate()+6);
-
-  document.getElementById("weekTitle").textContent =
-    base.toLocaleDateString("he-IL")+" — "+end.toLocaleDateString("he-IL");
+(async()=>{
+  const grid=document.getElementById('grid');
+  const now=new Date();
+  const start=new Date(now);
+  start.setDate(now.getDate()-now.getDay());
+  const schoolVacations=await loadSchoolVacations();
 
   for(let i=0;i<7;i++){
-    const d=new Date(base);
-    d.setDate(base.getDate()+i);
-    const iso=d.toISOString().slice(0,10);
+    const d=new Date(start);
+    d.setDate(start.getDate()+i);
+    const iso=isoDate(d);
 
-    const cell=document.createElement("div");
-    cell.className="daycell"+(isShabbat(d)?" shabbat":"");
+    const hebcalMap=await getHebcalMonthMap(d.getFullYear(), d.getMonth());
+    const parasha=isFridayOrSaturday(d) ? await getParashaForDate(d) : "";
+    const labels=getLabelsForDate(iso, hebcalMap, schoolVacations, parasha);
+    const classes=getClassesForDate(d, iso, hebcalMap, schoolVacations);
+
+    const cell=document.createElement('div');
+    cell.className='day-cell '+classes.join(' ');
     cell.innerHTML=`
-      <div class="title">${dayName(d)}</div>
-      <div class="sub">${gregDate(d)}</div>
-      <div class="sub">${hebDate(d)}</div>
-      <div class="note" id="n${i}">טוען...</div>
-      <div class="parasha" id="p${i}"></div>
+      <div class="num">${d.getDate()}</div>
+      <div class="label">${labels.join('<br>')}</div>
     `;
     grid.appendChild(cell);
-
-    const data=await loadJSON(iso);
-    document.getElementById("n"+i).textContent=data&&data.notes?String(data.notes).slice(0,180):"";
-
-    if(isShabbat(d)){
-      const p=await getParasha(d);
-      if(p) document.getElementById("p"+i).textContent="פרשה: "+p;
-    }
   }
 })();
 </script>
