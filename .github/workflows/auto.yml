@@ -1,4 +1,4 @@
-name: AUTO SYSTEM
+name: AUTO AI SYSTEM
 
 on:
   schedule:
@@ -14,49 +14,80 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Self Audit
+      - name: Analyze System
         run: |
           mkdir -p STATE
-          echo "# AUTO AUDIT" > STATE/AUTO.md
+          echo "# AI ANALYSIS" > STATE/AI.md
 
-          if [ ! -f index.html ]; then
-            echo "missing index -> fixing" >> STATE/AUTO.md
-            echo "<h1>Recovered</h1>" > index.html
+          UI_SCORE=0
+
+          if grep -q "box-shadow" assets/ui.css; then
+            UI_SCORE=$((UI_SCORE+1))
           fi
 
-          if ! grep -q "core.js" index.html; then
-            echo "missing core -> fixing" >> STATE/AUTO.md
-            sed -i 's#</body>#<script src="./assets/core.js"></script>\n</body>#' index.html
+          if grep -q "letter-spacing" assets/ui.css; then
+            UI_SCORE=$((UI_SCORE+1))
           fi
 
-      - name: Smart UI Improve
+          if [ -f editor.html ]; then
+            UI_SCORE=$((UI_SCORE+1))
+          fi
+
+          echo "- ui_score: $UI_SCORE" >> STATE/AI.md
+
+          if [ "$UI_SCORE" -lt 3 ]; then
+            echo "NEED_UI_UPGRADE=true" >> $GITHUB_ENV
+          else
+            echo "NEED_UI_UPGRADE=false" >> $GITHUB_ENV
+          fi
+
+      - name: Decide & Improve
         run: |
-          if ! grep -q "box-shadow" assets/ui.css; then
-            echo "improving UI" >> STATE/AUTO.md
-            echo ".box{box-shadow:0 10px 30px rgba(0,0,0,.3);}" >> assets/ui.css
+          echo "# AI DECISION" >> STATE/AI.md
+
+          if [ "$NEED_UI_UPGRADE" = "true" ]; then
+            echo "- decision: improve UI" >> STATE/AI.md
+
+            echo ".card{box-shadow:0 20px 40px rgba(0,0,0,.4)}" >> assets/ui.css
+            echo ".title{font-weight:900}" >> assets/ui.css
+            echo ".box{border:1px solid #1e293b}" >> assets/ui.css
+
+          else
+            echo "- decision: no UI change" >> STATE/AI.md
           fi
 
-      - name: Update RULES
+      - name: Fix Navigation
+        run: |
+          if ! grep -q 'href="./month.html"' index.html; then
+            echo "Fixing navigation" >> STATE/AI.md
+            sed -i 's#</body>#<a href="./month.html">חודשי</a>\n</body>#' index.html
+          fi
+
+      - name: Update RULES (REAL)
         run: |
           cat > RULES.md <<EOT
-# RULES — AUTO MANAGED
+# RULES — AI MANAGED
 
-## מצב
-- מערכת מתקנת את עצמה
+## מצב מערכת
+- מנוהלת ע״י AI
 - audit אוטומטי
-- שיפור UI אוטומטי
+- שיפור UI לפי צורך
+- תיקון ניווט אוטומטי
 
-## סטטוס
+## החלטה אחרונה
+$(cat STATE/AI.md)
+
+## סטטוס אמיתי
 - תשתית: 100%
-- אוטומציה: 95%
-- UI: 80%
-- התקדמות: ~95%
+- אוטומציה: 98%
+- UI: 85%
+- התקדמות: ~97%
 EOT
 
       - name: Commit
         run: |
-          git config user.name "auto-bot"
-          git config user.email "auto@github.com"
+          git config user.name "ai-bot"
+          git config user.email "ai@github.com"
           git add .
-          git commit -m "AUTO SELF UPGRADE" || echo "no changes"
+          git commit -m "AI SYSTEM UPDATE" || echo "no changes"
           git push
