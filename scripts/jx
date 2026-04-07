@@ -1,0 +1,16 @@
+#!/data/data/com.termux/files/usr/bin/bash
+cd ~/github-journal
+echo "=== JOURNAL CONTROL ==="
+echo "1) audit"
+echo "2) push"
+echo "3) status"
+
+read -p "בחר: " c
+
+if [ "$c" = "1" ]; then
+  bash scripts/audit.sh
+elif [ "$c" = "2" ]; then
+  git add . && git commit -m "quick push" && git push
+elif [ "$c" = "3" ]; then
+  git status
+fi
