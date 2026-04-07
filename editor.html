@@ -17,29 +17,47 @@
 
 <div class="card">
 <input type="date" id="date">
-<textarea id="text" style="width:100%;height:200px"></textarea>
+<textarea id="text"></textarea>
 <button onclick="save()">שמור</button>
 </div>
 
 </div>
 
 <script>
+const REPO="yanivmizrachiy/github-journal";
+
 async function save(){
   const date=document.getElementById("date").value;
   const text=document.getElementById("text").value;
 
   if(!date)return alert("בחר תאריך");
 
-  const data={
+  const token=prompt("הכנס GitHub Token");
+
+  const path="entries/"+date+".json";
+
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify({
     notes:text,
     events:[]
-  };
+  },null,2))));
 
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=date+".json";
-  a.click();
+  const res=await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`,{
+    method:"PUT",
+    headers:{
+      "Authorization":"Bearer "+token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      message:"save "+date,
+      content:content
+    })
+  });
+
+  if(res.ok){
+    alert("נשמר בהצלחה");
+  }else{
+    alert("שגיאה בשמירה");
+  }
 }
 </script>
 
