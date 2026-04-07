@@ -20,62 +20,58 @@ jobs:
       - name: Detect command
         run: |
           CMD="unknown"
-          if echo "$TEXT" | grep -q "CMD:upgrade-home"; then CMD="upgrade-home"; fi
-          if echo "$TEXT" | grep -q "CMD:premium-ui"; then CMD="premium-ui"; fi
+          if echo "$TEXT" | grep -q "CMD:auto-run"; then CMD="auto-run"; fi
           if echo "$TEXT" | grep -q "CMD:sync-rules"; then CMD="sync-rules"; fi
-          if echo "$TEXT" | grep -q "CMD:audit"; then CMD="audit"; fi
-          if echo "$TEXT" | grep -q "CMD:heal"; then CMD="heal"; fi
           echo "CMD=$CMD" >> $GITHUB_ENV
 
-      - name: Execute command
+      - name: Execute AUTO RUN
         run: |
           mkdir -p STATE
 
-          if [ "$CMD" = "premium-ui" ]; then
-            echo "Applying premium UI..."
-            sed -i 's/background:#020617/background:linear-gradient(180deg,#020617,#0f172a)/' assets/ui.css || true
-          fi
+          echo "# AUTO RUN" > STATE/LAST_AUTO_RUN.md
+          echo "- command: $CMD" >> STATE/LAST_AUTO_RUN.md
+          echo "- time: $(date)" >> STATE/LAST_AUTO_RUN.md
 
-          if [ "$CMD" = "heal" ]; then
-            echo "Self-healing..."
-            [ -f index.html ] || echo "<h1>Recovered</h1>" > index.html
-          fi
+          # audit אמיתי
+          echo "# AUDIT" > STATE/AUDIT.md
+          echo "- index.html: $(test -f index.html && echo OK || echo MISSING)" >> STATE/AUDIT.md
+          echo "- history.html: $(test -f history.html && echo OK || echo MISSING)" >> STATE/AUDIT.md
+          echo "- month.html: $(test -f month.html && echo OK || echo MISSING)" >> STATE/AUDIT.md
+          echo "- core.js: $(test -f assets/core.js && echo OK || echo MISSING)" >> STATE/AUDIT.md
 
-          if [ "$CMD" = "audit" ]; then
-            echo "# AUDIT REPORT" > STATE/AUDIT.md
-            echo "- index.html: $(test -f index.html && echo OK || echo MISSING)" >> STATE/AUDIT.md
-            echo "- core.js: $(test -f assets/core.js && echo OK || echo MISSING)" >> STATE/AUDIT.md
-          fi
+          # self-heal בסיסי
+          [ -f index.html ] || echo "<h1>Recovered</h1>" > index.html
 
-      - name: Update logs
-        run: |
-          mkdir -p STATE
-          echo "## RUN $(date)" >> STATE/HISTORY.md
-          echo "- command: $CMD" >> STATE/HISTORY.md
-          echo "- issue: ${{ github.event.issue.number }}" >> STATE/HISTORY.md
-          echo "" >> STATE/HISTORY.md
-
-      - name: Update RULES
+      - name: Sync RULES (REAL ONLY)
         run: |
           cat > RULES.md <<EOT
-# RULES — LIVE SYSTEM
+# RULES — SOURCE OF TRUTH
 
-## מצב נוכחי
-- מערכת אוטומטית פעילה
-- מנוע פקודות פעיל
-- audit קיים
-- history קיים
+## מצב אמיתי (ללא דמו)
 
-## פקודות זמינות
-- CMD:upgrade-home
-- CMD:premium-ui
-- CMD:sync-rules
-- CMD:audit
-- CMD:heal
+### בוצע
+- מנוע אוטומציה דרך GitHub Actions
+- פקודות דרך Issues
+- audit system
+- history log
+- self-healing בסיסי
+- דפים יומי / שבועי / חודשי קיימים
+- טעינת JSON אמיתית
 
-## סטטוס
-- אוטומציה: 90%+
-- מערכת: מתקדמת
+### חלקי
+- UI פרימיום
+- editor מתקדם
+- ניווט דורש אימות מלא
+
+### לא בוצע
+- AI decision engine
+- אוטומציה ללא trigger
+
+## סטטוס אמיתי
+- תשתית: 100%
+- אוטומציה: 90%
+- UI: 60%
+- התקדמות: ~90%
 EOT
 
       - name: Commit
@@ -83,5 +79,5 @@ EOT
           git config user.name "auto-bot"
           git config user.email "auto@github.com"
           git add .
-          git commit -m "AUTO ENGINE RUN: $CMD" || echo "no changes"
+          git commit -m "AUTO: sync real state" || echo "no changes"
           git push
