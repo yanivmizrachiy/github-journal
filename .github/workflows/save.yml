@@ -1,0 +1,25 @@
+name: SAVE ENTRY
+
+on:
+  repository_dispatch:
+    types: [save_entry]
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write Entry
+        run: |
+          mkdir -p entries
+          echo '${{ github.event.client_payload.data }}' > entries/${{ github.event.client_payload.date }}.json
+
+      - name: Commit
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@github.com"
+          git add .
+          git commit -m "save entry" || echo "no changes"
+          git push
