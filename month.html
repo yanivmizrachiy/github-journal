@@ -5,78 +5,86 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>חודשי</title>
 <link rel="stylesheet" href="./assets/styles.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{padding:10px;border-radius:10px;background:#111827;text-align:center}
+.shabbat{background:#ec4899}
+.rosh{background:#facc15;color:#000}
+.holiday{background:#22c55e}
+</style>
 </head>
 <body>
+
 <div class="wrap">
 
-<div class="header">
-  <div class="nav">
-    <a class="daily" href="./index.html">יומי</a>
-    <a class="weekly" href="./history.html">שבועי</a>
-    <a class="monthly" href="./month.html">חודשי</a>
-    <a class="editor" href="./editor.html">כתיבה</a>
-  </div>
+<div class="nav">
+<a class="daily" href="./index.html">יומי</a>
+<a class="weekly" href="./history.html">שבועי</a>
+<a class="monthly" href="./month.html">חודשי</a>
+<a class="editor" href="./editor.html">כתיבה</a>
 </div>
 
-<div class="title" id="monthTitle">חודש</div>
-
-<div class="grid7" style="margin-top:20px">
-  <div class="card" style="padding:10px;text-align:center">ראשון</div>
-  <div class="card" style="padding:10px;text-align:center">שני</div>
-  <div class="card" style="padding:10px;text-align:center">שלישי</div>
-  <div class="card" style="padding:10px;text-align:center">רביעי</div>
-  <div class="card" style="padding:10px;text-align:center">חמישי</div>
-  <div class="card" style="padding:10px;text-align:center">שישי</div>
-  <div class="card" style="padding:10px;text-align:center">שבת</div>
-</div>
-
-<div class="grid7" id="grid" style="margin-top:10px"></div>
+<div id="grid" class="grid"></div>
 
 </div>
 
-<script src="./assets/core.js"></script>
 <script>
-(async ()=>{
-  const current=new Date();
-  const year=current.getFullYear();
-  const month=current.getMonth();
-  const first=new Date(year,month,1);
-  const startDay=first.getDay();
-  const daysInMonth=new Date(year,month+1,0).getDate();
+const grid=document.getElementById("grid");
+const now=new Date();
+const year=now.getFullYear();
+const month=now.getMonth();
 
-  document.getElementById("monthTitle").textContent =
-    current.toLocaleDateString("he-IL",{month:"long",year:"numeric"});
+async function build(){
 
-  const grid=document.getElementById("grid");
+  const start=new Date(year,month,1);
+  const end=new Date(year,month+1,0);
 
-  for(let i=0;i<startDay;i++){
-    const empty=document.createElement("div");
-    grid.appendChild(empty);
-  }
+  // הבאת נתוני לוח עברי
+  const res=await fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&year=${year}&month=${month+1}&geo=none`);
+  const data=await res.json();
 
-  for(let d=1; d<=daysInMonth; d++){
-    const date=new Date(year,month,d);
-    const iso=date.toISOString().slice(0,10);
+  const map={};
 
-    const cell=document.createElement("div");
-    cell.className="daycell"+(isShabbat(date)?" shabbat":"");
-    cell.innerHTML=`
-      <div class="num">${d}</div>
-      <div class="sub">${hebDate(date)}</div>
-      <div class="note" id="m${d}">טוען...</div>
-      <div class="parasha" id="mp${d}"></div>
-    `;
-    grid.appendChild(cell);
-
-    const data=await loadJSON(iso);
-    document.getElementById("m"+d).textContent=data&&data.notes?String(data.notes).slice(0,60):"";
-
-    if(isShabbat(date)){
-      const p=await getParasha(date);
-      if(p) document.getElementById("mp"+d).textContent="פרשה: "+p;
+  data.items.forEach(i=>{
+    if(i.date){
+      const d=i.date.split("T")[0];
+      map[d]=map[d]||[];
+      map[d].push(i);
     }
+  });
+
+  for(let i=1;i<=end.getDate();i++){
+    const d=new Date(year,month,i);
+    const iso=d.toISOString().slice(0,10);
+
+    const div=document.createElement("div");
+    div.className="day";
+    div.innerText=i;
+
+    // שבת
+    if(d.getDay()===6){
+      div.classList.add("shabbat");
+    }
+
+    // אירועי לוח עברי
+    if(map[iso]){
+      map[iso].forEach(ev=>{
+        if(ev.category==="roshchodesh"){
+          div.classList.add("rosh");
+        }
+
+        if(ev.category==="holiday"){
+          div.classList.add("holiday");
+        }
+      });
+    }
+
+    grid.appendChild(div);
   }
-})();
+}
+
+build();
 </script>
+
 </body>
 </html>
