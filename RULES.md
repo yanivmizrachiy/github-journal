@@ -9,20 +9,30 @@
 - חופשות מוסדות לימוד בירוק
 - בלי סתירות ב-RULES
 
-## מה קיים בפועל
-- כל 3 התצוגות משתמשות באותה לוגיקה מרכזית
-- שמירת נתונים אמיתית ל-GitHub קיימת
-- חופשות נטענות מקובץ JSON
-- שישי ושבת מסומנים
-- פרשה נטענת לימי שישי ושבת
-- ראש חודש וחגים מסומנים
+## מה נבדק בפועל
+- index.html: OK
+- history.html: OK
+- month.html: OK
+- editor.html: OK
+- assets/styles.css: OK
+- assets/core-calendar.js: OK
+- assets/school-vacations.json: OK
+- daily day element: OK
+- daily gregorian element: OK
+- daily hebrew element: OK
+- daily events element: OK
+- daily notes element: OK
+- weekly uses unified core: OK
+- monthly uses unified core: OK
+- friday saturday logic: OK
+- school vacations logic: OK
+- parasha logic: OK
+- homepage unwanted old buttons: OK
 
-## מה עדיין דורש אימות חזותי
-- שכל הצבעים מופיעים נכון בטלפון
-- שכל ימי פסח ירוקים בפועל
-- שכל שישי ושבת מציגים פרשה בפועל
+## סטטוס מערכת
+- doctor: OK
 
-## סטטוס אמיתי
-- תשתית: 100%
-- דרישות בקוד: 100%
-- אימות חזותי: עדיין נדרש
+## פירוש הסטטוס
+- OK = קיים ונמצא בקוד
+- FAIL = חסר או לא נמצא בקוד
+- אימות חזותי בטלפון עדיין דורש בדיקה ידנית
