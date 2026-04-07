@@ -4,7 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>שבועי</title>
-<link rel="stylesheet" href="./assets/styles.css?v=1775558877">
+<link rel="stylesheet" href="./assets/styles.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day-cell{padding:10px;border-radius:10px;background:#111827;min-height:110px}
+.num{font-weight:800;font-size:16px}
+.label{font-size:11px;margin-top:4px;line-height:1.35}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -14,36 +21,32 @@
     <a class="monthly" href="./month.html">חודשי</a>
     <a class="editor" href="./editor.html">כתיבה</a>
   </div>
-
-  <div class="grid" id="grid"></div>
+  <div id="grid" class="grid"></div>
 </div>
 
-<script src="./assets/calendar-data.js?v=1775558877"></script>
-<script src="./assets/calendar-logic.js?v=1775558877"></script>
+<script src="./assets/core-calendar.js?v=weekfix"></script>
 <script>
 (async()=>{
   const grid=document.getElementById('grid');
   const now=new Date();
   const start=new Date(now);
   start.setDate(now.getDate()-now.getDay());
-  const schoolVacations=await loadSchoolVacations();
+  const {school}=await loadAll();
 
   for(let i=0;i<7;i++){
     const d=new Date(start);
     d.setDate(start.getDate()+i);
-    const iso=isoDate(d);
-
-    const hebcalMap=await getHebcalMonthMap(d.getFullYear(), d.getMonth());
-    const parasha=isFridayOrSaturday(d) ? await getParashaForDate(d) : "";
-    const labels=getLabelsForDate(iso, hebcalMap, schoolVacations, parasha);
-    const classes=getClassesForDate(d, iso, hebcalMap, schoolVacations);
 
     const cell=document.createElement('div');
-    cell.className='day-cell '+classes.join(' ');
+    cell.className='day-cell';
+
+    const labels=await getDayLabels(d, school);
     cell.innerHTML=`
       <div class="num">${d.getDate()}</div>
-      <div class="label">${labels.join('<br>')}</div>
+      ${labels.map(x=>`<div class="label">${x}</div>`).join("")}
     `;
+
+    applyColors(cell,d,school);
     grid.appendChild(cell);
   }
 })();
