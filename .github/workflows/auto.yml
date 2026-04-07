@@ -1,0 +1,48 @@
+name: AUTO SYSTEM
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read Issue
+        id: issue
+        run: |
+          echo "BODY<<EOF" >> $GITHUB_OUTPUT
+          echo "${{ github.event.issue.body }}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Apply Changes
+        run: |
+          echo "AUTO UPDATE START"
+
+          # דוגמה: שדרוג RULES אוטומטי
+          cat > RULES.md <<EOT
+# RULES — AUTO UPDATED
+
+בקשה:
+${{ steps.issue.outputs.BODY }}
+
+סטטוס:
+- עודכן אוטומטית
+- המערכת עובדת דרך GitHub Actions
+
+התקדמות: מתעדכן דינמית
+EOT
+
+      - name: Commit
+        run: |
+          git config user.name "auto-bot"
+          git config user.email "auto@github.com"
+          git add .
+          git commit -m "AUTO: apply issue" || echo "no changes"
+
+      - name: Push
+        run: |
+          git push
