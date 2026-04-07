@@ -7,105 +7,28 @@
 <link rel="stylesheet" href="./assets/styles.css">
 <style>
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.day{padding:8px;border-radius:10px;background:#111827;font-size:14px}
+.day{padding:8px;border-radius:10px;background:#111827;font-size:13px;min-height:84px}
 .shabbat{background:#ec4899}
 .rosh{background:#facc15;color:#000}
 .holiday{background:#fde047;color:#000}
 .school{background:#22c55e}
-.label{font-size:11px;margin-top:4px}
+.label{font-size:10px;margin-top:2px;line-height:1.35}
+.num{font-weight:800;font-size:14px}
 </style>
 </head>
 <body>
-
 <div class="wrap">
-
-<div class="nav">
-<a class="daily" href="./index.html">יומי</a>
-<a class="weekly" href="./history.html">שבועי</a>
-<a class="monthly" href="./month.html">חודשי</a>
-<a class="editor" href="./editor.html">כתיבה</a>
+  <div class="nav">
+    <a class="daily" href="./index.html">יומי</a>
+    <a class="weekly" href="./history.html">שבועי</a>
+    <a class="monthly" href="./month.html">חודשי</a>
+    <a class="editor" href="./editor.html">כתיבה</a>
+  </div>
+  <div id="grid" class="grid"></div>
 </div>
-
-<div id="grid" class="grid"></div>
-
-</div>
-
-<script src="./assets/calendar-data.js"></script>
-
+<script src="./assets/month-engine.js"></script>
 <script>
-const grid=document.getElementById("grid");
-const now=new Date();
-const year=now.getFullYear();
-const month=now.getMonth();
-
-async function build(){
-
-  const res=await fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&year=${year}&month=${month+1}&geo=none`);
-  const data=await res.json();
-
-  const map={};
-
-  data.items.forEach(i=>{
-    const d=i.date?.split("T")[0];
-    if(!d) return;
-    map[d]=map[d]||[];
-    map[d].push(i);
-  });
-
-  const days=new Date(year,month+1,0).getDate();
-
-  for(let i=1;i<=days;i++){
-    const d=new Date(year,month,i);
-    const iso=d.toISOString().slice(0,10);
-
-    const div=document.createElement("div");
-    div.className="day";
-
-    let label="";
-
-    // שבת
-    if(d.getDay()===6){
-      div.classList.add("shabbat");
-
-      const parasha=map[iso]?.find(e=>e.category==="parashat");
-      if(parasha){
-        label=parasha.hebrew;
-      }
-    }
-
-    // ראש חודש / חג
-    if(map[iso]){
-      map[iso].forEach(ev=>{
-        if(ev.category==="roshchodesh"){
-          div.classList.add("rosh");
-          label=ev.hebrew;
-        }
-
-        if(ev.category==="holiday"){
-          div.classList.add("holiday");
-          label=ev.hebrew;
-        }
-      });
-    }
-
-    // חופשות בית ספר
-    const school=getSchoolEvents(d);
-    if(school){
-      div.classList.add("school");
-      label=school;
-    }
-
-    div.innerHTML = `
-      <div>${i}</div>
-      <div class="label">${label || ""}</div>
-    `;
-
-    grid.appendChild(div);
-  }
-}
-
-build();
+buildSmartMonth('grid');
 </script>
-
 </body>
 </html>
