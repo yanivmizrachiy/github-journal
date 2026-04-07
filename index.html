@@ -3,63 +3,78 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>יומן</title>
+<title>היומן של יניב</title>
 <link rel="stylesheet" href="./assets/ui.css">
 </head>
 <body>
-
 <div class="wrap">
 
 <div class="header">
-<div class="nav">
-<a class="daily" href="./index.html">יומי</a>
-<a class="weekly" href="./history.html">שבועי</a>
-<a class="monthly" href="./month.html">חודשי</a>
-<a class="editor" href="./editor.html">כתיבה</a>
-</div>
+  <div class="nav">
+    <a class="daily" href="./index.html">יומי</a>
+    <a class="weekly" href="./history.html">שבועי</a>
+    <a class="monthly" href="./month.html">חודשי</a>
+    <a class="editor" href="./editor.html">כתיבה</a>
+  </div>
 </div>
 
-<div id="day" class="day"></div>
-<div id="greg" class="greg"></div>
-<div id="heb" class="heb"></div>
-<div id="parasha" class="parasha"></div>
+<div id="hero" class="card">
+  <div id="day" class="day"></div>
+  <div id="greg" class="greg"></div>
+  <div id="heb" class="heb"></div>
+  <div id="parasha" class="parasha"></div>
+</div>
 
-<div class="grid">
-<div id="events" class="box"></div>
-<div id="notes" class="box"></div>
+<div class="grid2">
+  <div class="card">
+    <div class="title">אירועי היום</div>
+    <div id="events" class="box"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">הערות</div>
+    <div id="notes" class="box"></div>
+  </div>
 </div>
 
 </div>
 
 <script src="./assets/core.js"></script>
 <script>
+(async()=>{
+  const d=new Date();
+  const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
 
-(async ()=>{
-const d=new Date();
-const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
+  day.textContent=names[d.getDay()];
+  greg.textContent=d.toLocaleDateString("he-IL");
 
-day.textContent=names[d.getDay()];
-greg.textContent=d.toLocaleDateString("he-IL");
+  try{
+    heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d);
+  }catch{}
 
-try{
-heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d);
-}catch{}
+  if(d.getDay()===6){
+    document.body.style.background="#ec4899";
+    try{
+      const r=await fetch("https://www.hebcal.com/shabbat?cfg=json");
+      const j=await r.json();
+      if(j.parasha) parasha.textContent="פרשת השבוע: "+j.parasha;
+    }catch{}
+  }
 
-if(isShabbat(d)){
-document.body.classList.add("shabbat");
-const p=await getParasha(d);
-if(p) parasha.textContent="פרשת השבוע: "+p;
-}
+  const iso=d.toISOString().slice(0,10);
 
-const iso=getTodayISO();
+  try{
+    const r=await fetch("./entries/"+iso+".json");
+    const data=await r.json();
 
-const data=await loadJSON(iso);
-
-events.textContent=data&&data.events?data.events.join("\n"):"אין אירועים";
-notes.textContent=data&&data.notes?data.notes:"";
+    events.textContent=(data.events||[]).join("\n");
+    notes.textContent=data.notes||"";
+  }catch{
+    events.textContent="אין נתונים";
+    notes.textContent="";
+  }
 
 })();
-
 </script>
 
 </body>
