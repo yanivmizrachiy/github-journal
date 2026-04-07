@@ -3,5 +3,5 @@ CHECKS:
 - homepage_dates: OK
 - navigation: OK
 - json_loading: OK
-- demo_text: REMOVED
+- _text: REMOVED
 - shabbat_system: PARTIAL

@@ -1,0 +1,15 @@
+body{margin:0;background:#020617;color:#fff;font-family:Arial}
+.wrap{max-width:1000px;margin:auto;padding:20px}
+.header{display:flex;justify-content:space-between;gap:10px;margin-bottom:20px}
+.nav a{padding:10px 14px;border-radius:12px;text-decoration:none;color:#fff;font-weight:800}
+.daily{background:#2563eb}
+.weekly{background:#16a34a}
+.monthly{background:#7c3aed}
+.editor{background:#ea580c}
+.day{font-size:56px;font-weight:900}
+.greg{font-size:32px;margin-top:10px}
+.heb{font-size:24px;margin-top:8px;color:#93c5fd}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+.box{background:#0f172a;border-radius:18px;padding:16px;min-height:140px;white-space:pre-wrap}
+.shabbat{background:#ec4899!important}
+.parasha{font-size:18px;font-weight:800;margin-top:10px}

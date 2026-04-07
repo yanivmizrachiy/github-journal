@@ -4,53 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>יומן</title>
-<style>
-body{margin:0;background:#020617;color:#fff;font-family:Arial}
-.wrap{max-width:900px;margin:auto;padding:20px}
-.day{font-size:52px;font-weight:900}
-.greg{font-size:30px;margin-top:8px}
-.heb{font-size:24px;margin-top:6px;color:#93c5fd}
-.row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
-.btn{padding:12px 16px;border-radius:14px;text-decoration:none;color:#fff;font-weight:800}
-.daily{background:#2563eb}
-.weekly{background:#16a34a}
-.monthly{background:#7c3aed}
-.editor{background:#ea580c}
-.box{background:#0f172a;border-radius:18px;padding:16px;margin-top:16px;min-height:140px;white-space:pre-wrap}
-</style>
+<link rel="stylesheet" href="./assets/ui.css">
 </head>
 <body>
+
 <div class="wrap">
+
+<div class="header">
+<div class="nav">
+<a class="daily" href="./index.html">יומי</a>
+<a class="weekly" href="./history.html">שבועי</a>
+<a class="monthly" href="./month.html">חודשי</a>
+<a class="editor" href="./editor.html">כתיבה</a>
+</div>
+</div>
+
 <div id="day" class="day"></div>
 <div id="greg" class="greg"></div>
 <div id="heb" class="heb"></div>
+<div id="parasha" class="parasha"></div>
 
-<div class="row">
-<a class="btn daily" href="./index.html">יומי</a>
-<a class="btn weekly" href="./history.html">שבועי</a>
-<a class="btn monthly" href="./month.html">חודשי</a>
-<a class="btn editor" href="./editor.html">כתיבה</a>
-</div>
-
+<div class="grid">
 <div id="events" class="box"></div>
 <div id="notes" class="box"></div>
 </div>
 
+</div>
+
 <script src="./assets/core.js"></script>
 <script>
+
+(async ()=>{
 const d=new Date();
 const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
+
 day.textContent=names[d.getDay()];
 greg.textContent=d.toLocaleDateString("he-IL");
+
 try{
 heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d);
 }catch{}
 
+if(isShabbat(d)){
+document.body.classList.add("shabbat");
+const p=await getParasha(d);
+if(p) parasha.textContent="פרשת השבוע: "+p;
+}
+
 const iso=getTodayISO();
-loadJSON(iso).then(data=>{
+
+const data=await loadJSON(iso);
+
 events.textContent=data&&data.events?data.events.join("\n"):"אין אירועים";
 notes.textContent=data&&data.notes?data.notes:"";
-});
+
+})();
+
 </script>
+
 </body>
 </html>
