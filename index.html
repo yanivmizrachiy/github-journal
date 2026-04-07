@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>היומן של יניב</title>
-<link rel="stylesheet" href="./assets/styles.css?v=clean">
+<link rel="stylesheet" href="./assets/styles.css?v=finalpro">
 </head>
 <body>
 <div class="wrap">
@@ -19,23 +19,23 @@
     <div id="notes" class="box"></div>
   </div>
 </div>
-<script src="./assets/core-calendar.js?v=clean"></script>
+<script src="./assets/core-calendar.js?v=finalpro"></script>
 <script>
 (async()=>{
-  const d=new Date();
-  const iso=isoDate(d);
+  const d=new Date(), iso=isoDate(d);
   const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
   day.textContent=names[d.getDay()];
   greg.textContent=iso;
   try{ heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d); }catch{}
   const schoolVacations=await loadSchoolVacations();
-  const map=await getHebcalDayMap(iso,iso);
+  const map=await getHebcalRangeMap(iso,iso);
   const items=map[iso]||[];
-  const labelsArr=await getDayLabels(d,iso,schoolVacations,items);
+  const labelsArr=await buildDayLabels(d,iso,schoolVacations,items);
   labels.innerHTML=labelsArr.map(x=>`<div>${x}</div>`).join("");
-  const classes=getDayClasses(d,iso,schoolVacations,items);
+  const classes=buildDayClasses(d,iso,schoolVacations,items);
   if(classes.includes('school')) hero.classList.add('hero-school');
-  if(classes.includes('shabbat') && !classes.includes('school')) hero.classList.add('hero-shabbat');
+  else if(classes.includes('shabbat')) hero.classList.add('hero-shabbat');
+
   try{
     const r=await fetch(`./entries/${iso}.json?ts=${Date.now()}`,{cache:'no-store'});
     const data=r.ok?await r.json():null;

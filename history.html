@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>שבועי</title>
-<link rel="stylesheet" href="./assets/styles.css?v=clean">
+<link rel="stylesheet" href="./assets/styles.css?v=finalpro">
 </head>
 <body>
 <div class="wrap">
@@ -16,7 +16,7 @@
   </div>
   <div id="grid" class="grid"></div>
 </div>
-<script src="./assets/core-calendar.js?v=clean"></script>
+<script src="./assets/core-calendar.js?v=finalpro"></script>
 <script>
 (async()=>{
   const grid=document.getElementById('grid');
@@ -26,16 +26,18 @@
   const end=new Date(start);
   end.setDate(start.getDate()+6);
   const schoolVacations=await loadSchoolVacations();
-  const map=await getHebcalDayMap(isoDate(start),isoDate(end));
+  const map=await getHebcalRangeMap(isoDate(start),isoDate(end));
+
   for(let i=0;i<7;i++){
     const d=new Date(start); d.setDate(start.getDate()+i);
     const iso=isoDate(d);
     const items=map[iso]||[];
-    const labels=await getDayLabels(d,iso,schoolVacations,items);
-    const classes=getDayClasses(d,iso,schoolVacations,items);
+    const labels=await buildDayLabels(d,iso,schoolVacations,items);
+    const classes=buildDayClasses(d,iso,schoolVacations,items);
+
     const cell=document.createElement('div');
     cell.className='day-cell';
-    applyDayClasses(cell,classes);
+    applyClasses(cell,classes);
     cell.innerHTML=`<div class="num">${d.getDate()}</div>${labels.map(x=>`<div class="label">${x}</div>`).join("")}`;
     grid.appendChild(cell);
   }
