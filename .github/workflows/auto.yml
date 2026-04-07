@@ -7,6 +7,7 @@ on:
 jobs:
   apply:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -15,43 +16,51 @@ jobs:
         run: |
           echo "TEXT=${{ github.event.issue.body }}" >> $GITHUB_ENV
 
-      - name: Apply logic
+      - name: Detect command
         run: |
-          echo "Processing: $TEXT"
+          echo "Command: $TEXT"
 
-          if echo "$TEXT" | grep -i "דף בית"; then
-            echo "Updating homepage..."
+          if echo "$TEXT" | grep -q "CMD:upgrade-home"; then
+            echo "UPGRADING HOMEPAGE"
 
             cat > index.html <<EOT
 <!doctype html>
 <html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>יומן</title>
+<style>
+body{background:#020617;color:white;font-family:Arial;text-align:center}
+h1{font-size:48px}
+</style>
+</head>
 <body>
-<h1>דף בית עודכן אוטומטית</h1>
+<h1>דף בית משודרג ✔</h1>
+<p>המערכת האוטומטית עובדת</p>
 </body>
 </html>
 EOT
-
           fi
 
-      - name: Update RULES
-        run: |
-          cat > RULES.md <<EOT
-# RULES AUTO
+          if echo "$TEXT" | grep -q "CMD:fix-rules"; then
+            echo "UPDATING RULES"
 
-בקשה:
+            cat > RULES.md <<EOT
+# RULES — AUTO ENGINE
+
+עודכן אוטומטית לפי פקודה:
 $TEXT
 
-בוצע:
-- שינוי אוטומטי לפי הבקשה
-
 סטטוס:
-- המערכת פועלת אוטומטית
+- מערכת פקודות פעילה
+- עדכון אוטומטי עובד
 EOT
+          fi
 
       - name: Commit & Push
         run: |
           git config user.name "auto-bot"
           git config user.email "auto@github.com"
           git add .
-          git commit -m "AUTO APPLY" || echo "no changes"
+          git commit -m "AUTO COMMAND" || echo "no changes"
           git push
