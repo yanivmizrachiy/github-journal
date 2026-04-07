@@ -3,64 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>יומן יניב</title>
-<link rel="stylesheet" href="./assets/styles.css?v=clean-home-v2?v=1775558877">
+<title>יומן</title>
+<link rel="stylesheet" href="./assets/styles.css">
 </head>
 <body>
-<div class="wrap">
-  <div class="nav">
-    <a class="daily" href="./index.html">יומי</a>
-    <a class="weekly" href="./history.html">שבועי</a>
-    <a class="monthly" href="./month.html">חודשי</a>
-    <a class="editor" href="./editor.html">כתיבה</a>
-  </div>
 
-  <div id="hero" class="card">
-    <div id="day" class="day"></div>
-    <div id="greg" class="greg"></div>
-    <div id="heb" class="heb"></div>
-    <div id="labels" class="box"></div>
-  </div>
+<div id="root" style="padding:20px;text-align:center"></div>
 
-  <div class="card">
-    <h2>תוכן היום</h2>
-    <div id="events" class="box"></div>
-    <div id="notes" class="box"></div>
-  </div>
-</div>
-
-<script src="./assets/calendar-data.js?v=clean-home-v2?v=1775558877"></script>
-<script src="./assets/calendar-logic.js?v=clean-home-v2?v=1775558877"></script>
+<script src="./assets/core-calendar.js"></script>
 <script>
 (async()=>{
-  const d=new Date();
-  const iso=isoDate(d);
-  const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
+const root=document.getElementById('root');
+const d=new Date();
+const names=["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
 
-  day.textContent=names[d.getDay()];
-  greg.textContent=iso;
-  heb.textContent=new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d);
+const {school}=await loadAll();
 
-  const schoolVacations=await loadSchoolVacations();
-  const hebcalMap=await getHebcalMonthMap(d.getFullYear(), d.getMonth());
-  const parasha=isFridayOrSaturday(d) ? await getParashaForDate(d) : "";
-  const labelsArr=getLabelsForDate(iso, hebcalMap, schoolVacations, parasha);
-  labels.innerHTML=labelsArr.length ? labelsArr.map(x=>`<div>${x}</div>`).join("") : "";
+let html="";
+html+=`<div style="font-size:64px;font-weight:900">${names[d.getDay()]}</div>`;
+html+=`<div>${iso(d)}</div>`;
+html+=`<div>${new Intl.DateTimeFormat("he-u-ca-hebrew",{dateStyle:"full"}).format(d)}</div>`;
 
-  const classes=getClassesForDate(d, iso, hebcalMap, schoolVacations);
-  if(classes.includes('school')) hero.classList.add('hero-school');
-  if(classes.includes('shabbat')) hero.classList.add('hero-shabbat');
+if(isFriSat(d)){
+  const p=await parasha(d);
+  if(p) html+=`<div>${p}</div>`;
+}
 
-  try{
-    const r=await fetch(`./entries/${iso}.json?ts=${Date.now()}`,{cache:'no-store'});
-    const data=await r.json();
-    events.textContent=(data.events||[]).join("\n");
-    notes.textContent=data.notes||"";
-  }catch{
-    events.textContent="אין אירועים";
-    notes.textContent="";
-  }
+root.innerHTML=html;
+
+applyColors(document.body,d,school);
 })();
 </script>
+
 </body>
 </html>

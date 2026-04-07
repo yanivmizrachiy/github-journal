@@ -4,57 +4,48 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>חודשי</title>
-<link rel="stylesheet" href="./assets/styles.css?v=1775558877">
+<link rel="stylesheet" href="./assets/styles.css">
 </head>
 <body>
-<div class="wrap">
-  <div class="nav">
-    <a class="daily" href="./index.html">יומי</a>
-    <a class="weekly" href="./history.html">שבועי</a>
-    <a class="monthly" href="./month.html">חודשי</a>
-    <a class="editor" href="./editor.html">כתיבה</a>
-  </div>
 
-  <div id="grid" class="grid"></div>
-</div>
+<div id="grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:10px"></div>
 
-<script src="./assets/calendar-data.js?v=1775558877"></script>
-<script src="./assets/calendar-logic.js?v=1775558877"></script>
+<script src="./assets/core-calendar.js"></script>
 <script>
 (async()=>{
-  const grid=document.getElementById('grid');
-  const now=new Date();
-  const year=now.getFullYear();
-  const month=now.getMonth();
-  const start=new Date(year,month,1);
-  const daysInMonth=new Date(year,month+1,0).getDate();
+const grid=document.getElementById('grid');
+const now=new Date();
+const y=now.getFullYear();
+const m=now.getMonth();
 
-  const schoolVacations=await loadSchoolVacations();
-  const hebcalMap=await getHebcalMonthMap(year, month);
+const {school}=await loadAll();
 
-  for(let i=0;i<start.getDay();i++){
-    const e=document.createElement('div');
-    e.className='day-cell';
-    e.style.visibility='hidden';
-    grid.appendChild(e);
+for(let i=1;i<=31;i++){
+  const d=new Date(y,m,i);
+  if(d.getMonth()!==m) break;
+
+  const el=document.createElement('div');
+  el.style.padding="10px";
+  el.style.borderRadius="10px";
+  el.style.background="#111";
+
+  let txt=i;
+
+  if(isFriSat(d)){
+    const p=await parasha(d);
+    if(p) txt+=`<br>${p}`;
   }
 
-  for(let i=1;i<=daysInMonth;i++){
-    const d=new Date(year,month,i);
-    const iso=isoDate(d);
-    const parasha=isFridayOrSaturday(d) ? await getParashaForDate(d) : "";
-    const labels=getLabelsForDate(iso, hebcalMap, schoolVacations, parasha);
-    const classes=getClassesForDate(d, iso, hebcalMap, schoolVacations);
+  if(school[iso(d)]) txt+=`<br>${school[iso(d)]}`;
 
-    const div=document.createElement('div');
-    div.className='day-cell '+classes.join(' ');
-    div.innerHTML=`
-      <div class="num">${i}</div>
-      ${labels.map(x=>`<div class="label">${x}</div>`).join("")}
-    `;
-    grid.appendChild(div);
-  }
+  el.innerHTML=txt;
+
+  applyColors(el,d,school);
+
+  grid.appendChild(el);
+}
 })();
 </script>
+
 </body>
 </html>
