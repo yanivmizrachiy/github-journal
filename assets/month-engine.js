@@ -9,17 +9,17 @@ async function buildSmartMonth(gridId){
   const start=new Date(year,month,1);
   const daysInMonth=new Date(year,month+1,0).getDate();
 
-  const hebcalRes=await fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&year=${year}&month=${month+1}&maj=on&min=on&mod=on&nx=on`);
-  const hebcal=await hebcalRes.json();
+  const res=await fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&year=${year}&month=${month+1}&maj=on&min=on&mod=on&nx=on`);
+  const data=await res.json();
 
   let schoolVacations={};
   try{
-    const schoolRes=await fetch('./assets/school-vacations.json?ts='+Date.now(), {cache:'no-store'});
-    if(schoolRes.ok) schoolVacations=await schoolRes.json();
+    const r=await fetch('./assets/school-vacations.json?ts='+Date.now(),{cache:'no-store'});
+    if(r.ok) schoolVacations=await r.json();
   }catch{}
 
   const map={};
-  (hebcal.items||[]).forEach(item=>{
+  (data.items||[]).forEach(item=>{
     const iso=item.date?.split('T')[0];
     if(!iso) return;
     map[iso]=map[iso]||[];
@@ -28,11 +28,12 @@ async function buildSmartMonth(gridId){
 
   grid.innerHTML='';
 
-  for(let blank=0; blank<start.getDay(); blank++){
-    const empty=document.createElement('div');
-    empty.className='day';
-    empty.style.visibility='hidden';
-    grid.appendChild(empty);
+  // רווחים בתחילת החודש
+  for(let i=0;i<start.getDay();i++){
+    const e=document.createElement('div');
+    e.className='day';
+    e.style.visibility='hidden';
+    grid.appendChild(e);
   }
 
   for(let i=1;i<=daysInMonth;i++){
@@ -44,40 +45,46 @@ async function buildSmartMonth(gridId){
 
     const labels=[];
 
+    // שבת
     if(d.getDay()===6){
       div.classList.add('shabbat');
     }
 
     const items=map[iso]||[];
-    for(const ev of items){
-      const title=(ev.title||'');
-      const heb=(ev.hebrew||'');
 
-      if(title.includes('Parashat') || title.includes('Shabbat')){
-        if(heb) labels.push(heb);
+    for(const ev of items){
+      const title=ev.title||"";
+      const heb=ev.hebrew||"";
+
+      // פרשת שבוע — תיקון יציב
+      if(title.includes("Parashat") && heb){
+        labels.push(heb);
       }
 
-      if(ev.category==='roshchodesh'){
+      // ראש חודש
+      if(ev.category==="roshchodesh"){
         div.classList.add('rosh');
         if(heb) labels.push(heb);
       }
 
-      if(ev.category==='holiday'){
+      // חגים
+      if(ev.category==="holiday"){
         div.classList.add('holiday');
         if(heb) labels.push(heb);
       }
     }
 
+    // חופשות בית ספר
     if(schoolVacations[iso]){
       div.classList.add('school');
       labels.push(schoolVacations[iso]);
     }
 
-    const uniq=[...new Set(labels.filter(Boolean))];
+    const uniq=[...new Set(labels)];
 
     div.innerHTML = `
       <div class="num">${i}</div>
-      ${uniq.map(x=>`<div class="label">${x}</div>`).join('')}
+      ${uniq.map(x=>`<div class="label">${x}</div>`).join("")}
     `;
 
     grid.appendChild(div);
