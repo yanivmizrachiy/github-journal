@@ -1,117 +1,66 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>לוח שבועי</title>
-<style>
-body{margin:0;background:#0f172a;color:#fff;font-family:Arial,sans-serif}
-.wrap{max-width:1100px;margin:auto;padding:20px}
-.header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
-.btn{padding:10px 14px;background:#3b82f6;border-radius:10px;cursor:pointer;font-weight:bold;text-decoration:none;color:#fff}
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
-.day{background:#1e293b;padding:12px;border-radius:12px;min-height:160px}
-.shabbat{background:#ec4899}
-.title{font-size:18px;font-weight:bold}
-.sub{font-size:13px;color:#dbeafe;margin-top:6px}
-.note{font-size:13px;line-height:1.6;white-space:pre-wrap;margin-top:10px}
-.parasha{font-size:13px;font-weight:bold;margin-top:10px}
-@media (max-width:900px){.grid{grid-template-columns:1fr}}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>שבועי</title>
+<link rel="stylesheet" href="./assets/ui.css">
 </head>
 <body>
 <div class="wrap">
-  <div class="header">
-    <a class="btn" href="./index.html">יומי</a>
-    <div style="font-size:28px;font-weight:bold" id="weekTitle">שבוע</div>
-    <a class="btn" href="./month.html">חודשי</a>
+
+<div class="header">
+  <div class="nav">
+    <a class="daily" href="./index.html">יומי</a>
+    <a class="weekly" href="./history.html">שבועי</a>
+    <a class="monthly" href="./month.html">חודשי</a>
+    <a class="editor" href="./editor.html">כתיבה</a>
   </div>
-  <div class="grid" id="grid"></div>
 </div>
 
+<div class="title" id="weekTitle">שבוע</div>
+<div class="grid7" id="grid" style="margin-top:20px"></div>
+
+</div>
+
+<script src="./assets/core.js"></script>
 <script>
-let current = new Date();
-
-function startOfWeek(date){
-  const d = new Date(date);
-  d.setHours(12,0,0,0);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
-}
-
-function isShabbat(date){
-  return date.getDay() === 6;
-}
-
-async function getParasha(date){
-  if(!isShabbat(date)) return "";
-  try{
-    const iso = date.toISOString().slice(0,10);
-    const res = await fetch(`https://www.hebcal.com/shabbat?cfg=json&date=${iso}`);
-    const data = await res.json();
-    return data.parasha || "";
-  }catch{
-    return "";
-  }
-}
-
-async function renderWeek(){
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-
-  const start = startOfWeek(current);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
+(async ()=>{
+  const grid=document.getElementById("grid");
+  const base=new Date();
+  base.setHours(12,0,0,0);
+  base.setDate(base.getDate()-base.getDay());
+  const end=new Date(base);
+  end.setDate(base.getDate()+6);
 
   document.getElementById("weekTitle").textContent =
-    start.toLocaleDateString("he-IL") + " — " + end.toLocaleDateString("he-IL");
-
-  const names = ["יום ראשון","יום שני","יום שלישי","יום רביעי","יום חמישי","יום שישי","שבת"];
+    base.toLocaleDateString("he-IL")+" — "+end.toLocaleDateString("he-IL");
 
   for(let i=0;i<7;i++){
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
+    const d=new Date(base);
+    d.setDate(base.getDate()+i);
+    const iso=d.toISOString().slice(0,10);
 
-    const iso = d.toISOString().slice(0,10);
-    const shabbat = isShabbat(d);
-
-    const cell = document.createElement("div");
-    cell.className = "day" + (shabbat ? " shabbat" : "");
-    cell.innerHTML = `
-      <div class="title">${names[d.getDay()]}</div>
-      <div class="sub">${d.toLocaleDateString("he-IL")}</div>
-      <div class="sub" id="heb-${i}"></div>
-      <div class="note" id="note-${i}">טוען...</div>
-      <div class="parasha" id="parasha-${i}"></div>
+    const cell=document.createElement("div");
+    cell.className="daycell"+(isShabbat(d)?" shabbat":"");
+    cell.innerHTML=`
+      <div class="title">${dayName(d)}</div>
+      <div class="sub">${gregDate(d)}</div>
+      <div class="sub">${hebDate(d)}</div>
+      <div class="note" id="n${i}">טוען...</div>
+      <div class="parasha" id="p${i}"></div>
     `;
     grid.appendChild(cell);
 
-    try{
-      document.getElementById(`heb-${i}`).textContent =
-        new Intl.DateTimeFormat("he-u-ca-hebrew",{day:"numeric",month:"long",year:"numeric"}).format(d);
-    }catch{}
+    const data=await loadJSON(iso);
+    document.getElementById("n"+i).textContent=data&&data.notes?String(data.notes).slice(0,180):"";
 
-    fetch(`./entries/${iso}.json?ts=${Date.now()}`, {cache:"no-store"})
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        document.getElementById(`note-${i}`).textContent =
-          data && data.notes ? String(data.notes).slice(0,180) : "";
-      })
-      .catch(() => {
-        document.getElementById(`note-${i}`).textContent = "";
-      });
-
-    if(shabbat){
-      getParasha(d).then(p => {
-        if(p){
-          document.getElementById(`parasha-${i}`).textContent = "פרשה: " + p;
-        }
-      });
+    if(isShabbat(d)){
+      const p=await getParasha(d);
+      if(p) document.getElementById("p"+i).textContent="פרשה: "+p;
     }
   }
-}
-
-renderWeek();
+})();
 </script>
 </body>
 </html>

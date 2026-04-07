@@ -1,129 +1,82 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>לוח חודשי</title>
-<style>
-body{margin:0;background:#0f172a;color:#fff;font-family:Arial,sans-serif}
-.wrap{max-width:1100px;margin:auto;padding:20px}
-.header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
-.btn{padding:10px 14px;background:#3b82f6;border-radius:10px;cursor:pointer;font-weight:bold}
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.head{background:#111827;padding:10px;border-radius:10px;text-align:center;font-weight:bold}
-.day{background:#1e293b;padding:10px;border-radius:12px;min-height:110px}
-.shabbat{background:#ec4899}
-.num{font-weight:bold;font-size:16px}
-.note{font-size:12px;margin-top:6px;white-space:pre-wrap}
-.parasha{font-size:12px;margin-top:6px;font-weight:bold}
-@media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>חודשי</title>
+<link rel="stylesheet" href="./assets/ui.css">
 </head>
 <body>
 <div class="wrap">
-  <div class="header">
-    <a class="btn" href="./history.html">◀ שבועי</a>
-    <div class="btn" onclick="prevMonth()">◀ חודש קודם</div>
-    <h2 id="monthTitle"></h2>
-    <div class="btn" onclick="nextMonth()">חודש הבא ▶</div>
-  </div>
 
-  <div class="grid" id="gridHeads">
-    <div class="head">ראשון</div>
-    <div class="head">שני</div>
-    <div class="head">שלישי</div>
-    <div class="head">רביעי</div>
-    <div class="head">חמישי</div>
-    <div class="head">שישי</div>
-    <div class="head">שבת</div>
+<div class="header">
+  <div class="nav">
+    <a class="daily" href="./index.html">יומי</a>
+    <a class="weekly" href="./history.html">שבועי</a>
+    <a class="monthly" href="./month.html">חודשי</a>
+    <a class="editor" href="./editor.html">כתיבה</a>
   </div>
-
-  <div class="grid" id="grid"></div>
 </div>
 
+<div class="title" id="monthTitle">חודש</div>
+
+<div class="grid7" style="margin-top:20px">
+  <div class="card" style="padding:10px;text-align:center">ראשון</div>
+  <div class="card" style="padding:10px;text-align:center">שני</div>
+  <div class="card" style="padding:10px;text-align:center">שלישי</div>
+  <div class="card" style="padding:10px;text-align:center">רביעי</div>
+  <div class="card" style="padding:10px;text-align:center">חמישי</div>
+  <div class="card" style="padding:10px;text-align:center">שישי</div>
+  <div class="card" style="padding:10px;text-align:center">שבת</div>
+</div>
+
+<div class="grid7" id="grid" style="margin-top:10px"></div>
+
+</div>
+
+<script src="./assets/core.js"></script>
 <script>
-let current = new Date();
-
-function isShabbat(date){
-  return date.getDay() === 6;
-}
-
-async function getParasha(date){
-  if(!isShabbat(date)) return "";
-  try{
-    const iso = date.toISOString().slice(0,10);
-    const res = await fetch(`https://www.hebcal.com/shabbat?cfg=json&date=${iso}`);
-    const data = await res.json();
-    return data.parasha || "";
-  }catch{
-    return "";
-  }
-}
-
-async function renderMonth(){
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-
-  const year = current.getFullYear();
-  const month = current.getMonth();
-
-  const first = new Date(year, month, 1);
-  const startDay = first.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+(async ()=>{
+  const current=new Date();
+  const year=current.getFullYear();
+  const month=current.getMonth();
+  const first=new Date(year,month,1);
+  const startDay=first.getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
 
   document.getElementById("monthTitle").textContent =
-    current.toLocaleDateString("he-IL", { month: "long", year: "numeric" });
+    current.toLocaleDateString("he-IL",{month:"long",year:"numeric"});
 
-  for(let i = 0; i < startDay; i++){
-    const empty = document.createElement("div");
+  const grid=document.getElementById("grid");
+
+  for(let i=0;i<startDay;i++){
+    const empty=document.createElement("div");
     grid.appendChild(empty);
   }
 
-  for(let d = 1; d <= daysInMonth; d++){
-    const date = new Date(year, month, d);
-    const iso = date.toISOString().slice(0,10);
-    const shabbat = isShabbat(date);
+  for(let d=1; d<=daysInMonth; d++){
+    const date=new Date(year,month,d);
+    const iso=date.toISOString().slice(0,10);
 
-    const cell = document.createElement("div");
-    cell.className = "day" + (shabbat ? " shabbat" : "");
-    cell.innerHTML = `
+    const cell=document.createElement("div");
+    cell.className="daycell"+(isShabbat(date)?" shabbat":"");
+    cell.innerHTML=`
       <div class="num">${d}</div>
-      <div class="note" id="note-${d}">טוען...</div>
-      <div class="parasha" id="parasha-${d}"></div>
+      <div class="sub">${hebDate(date)}</div>
+      <div class="note" id="m${d}">טוען...</div>
+      <div class="parasha" id="mp${d}"></div>
     `;
     grid.appendChild(cell);
 
-    fetch(`./entries/${iso}.json?ts=${Date.now()}`, {cache: "no-store"})
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        document.getElementById(`note-${d}`).textContent =
-          data && data.notes ? String(data.notes).slice(0, 60) : "";
-      })
-      .catch(() => {
-        document.getElementById(`note-${d}`).textContent = "";
-      });
+    const data=await loadJSON(iso);
+    document.getElementById("m"+d).textContent=data&&data.notes?String(data.notes).slice(0,60):"";
 
-    if(shabbat){
-      getParasha(date).then(p => {
-        if(p){
-          document.getElementById(`parasha-${d}`).textContent = "פרשה: " + p;
-        }
-      });
+    if(isShabbat(date)){
+      const p=await getParasha(date);
+      if(p) document.getElementById("mp"+d).textContent="פרשה: "+p;
     }
   }
-}
-
-function nextMonth(){
-  current.setMonth(current.getMonth() + 1);
-  renderMonth();
-}
-
-function prevMonth(){
-  current.setMonth(current.getMonth() - 1);
-  renderMonth();
-}
-
-renderMonth();
+})();
 </script>
 </body>
 </html>
