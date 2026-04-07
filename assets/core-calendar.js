@@ -53,7 +53,7 @@ function getDayClasses(d,iso,schoolVacations,items){
   if(isFridayOrSaturday(d)) classes.push('shabbat');
   if((items||[]).some(ev=>ev.category==="roshchodesh")) classes.push('rosh');
   if((items||[]).some(ev=>ev.category==="holiday")) classes.push('holiday');
-  return classes;
+  console.log("DAY:",iso,classes); return classes;
 }
 
 async function getDayLabels(d,iso,schoolVacations,items){
