@@ -1,7 +1,7 @@
 {
-  "name": "יומן יניב",
+  "name": "היומן של יניב",
   "short_name": "יומן",
-  "start_url": "/github-journal/",
+  "start_url": "/github-journal/?v=clean-home-v2",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
