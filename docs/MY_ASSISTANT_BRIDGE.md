@@ -1,7 +1,7 @@
 # MY ASSISTANT BRIDGE
 
 ## מטרה
-לחבר את `my-assistant` ל-`github-journal` כך שכל שמירה אמיתית תעבור דרך GitHub בצורה מבוקרת וללא דמו.
+לחבר את `my-assistant` ל-`github-journal` כך שכל שמירה אמיתית תעבור דרך GitHub בצורה מבוקרת וללא .
 
 ## עקרונות
 - `github-journal` הוא מקור האמת של היומן והנתונים.
