@@ -28,6 +28,10 @@
 - school vacations logic: OK
 - parasha logic: OK
 - homepage unwanted old buttons: OK
+- nav exists homepage: OK
+- nav exists weekly: OK
+- nav exists monthly: OK
+- nav exists editor: OK
 
 ## סטטוס מערכת
 - doctor: OK

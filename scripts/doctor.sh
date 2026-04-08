@@ -32,9 +32,17 @@ check_grep "assets/core-calendar.js" 'getParashaForDate' "parasha logic"
 
 if grep -q 'פתח עורך יומן\|היסטוריית ימים\|פתח קובץ היום\|הגדרות' index.html 2>/dev/null; then
   echo "- homepage unwanted old buttons: FAIL" >> "$OUT"
+check_grep "index.html" "class=\"nav\"" "nav exists homepage"
+check_grep "history.html" "class=\"nav\"" "nav exists weekly"
+check_grep "month.html" "class=\"nav\"" "nav exists monthly"
+check_grep "editor.html" "class=\"nav\"" "nav exists editor"
   fail=1
 else
   echo "- homepage unwanted old buttons: OK" >> "$OUT"
+check_grep "index.html" "class=\"nav\"" "nav exists homepage"
+check_grep "history.html" "class=\"nav\"" "nav exists weekly"
+check_grep "month.html" "class=\"nav\"" "nav exists monthly"
+check_grep "editor.html" "class=\"nav\"" "nav exists editor"
 fi
 
 echo >> "$OUT"
